@@ -1,0 +1,31 @@
+Vineet Koppalkar (40029699)
+COMP 371 Assignment 2
+
+----------------------------------------------
+
+Key bindings:
+
+(The following bindings are case sensitive)
+(E.g. Key 'W' = 'shift' + 'w')
+
+W : Moves Olaf forward
+S : Moves Olaf backwards
+A : Moves Olaf to his left
+D : Moves Olaf to his right
+
+a : Rotates Olaf 5 degrees along the positive Y-axis
+d : Rotates Olaf 5 degrees along the negative Y-axis
+
+Left arrow : Rotates world left
+Right arrow : Rotates world right
+Up arrow : Rotates world up
+Down arrow : Rotates world down
+
+Holding right mouse button and mouse movement in x : Pans the camera
+Holding middle mouse button (or key 'b') and mouse movement in y : Tilts the camera
+Holding the left mouse button and mouse movment in y : Zooms in/out the camera by changing FOV
+
+Key 'HOME' or key 'h' : Resest the world orientation and camera fov
+
+Spacebar : Randomly positions Olaf on the grid
+r : Resests Olaf's position, rotation and scale 
