@@ -82,6 +82,9 @@ bool drawWithReversedFaceCulling = true;
 GLenum renderMode = GL_TRIANGLE_STRIP;
 int numTriangles = 1267;
 
+// Lighting position
+vec3 lightPos(5.0f, 8.0f, -2.5f);
+
 // Colors
 vec3 backgroundColor(0.2f, 0.298f, 0.298f);
 vec3 yellow(1.0f, 1.0f, 0.0f);
@@ -117,11 +120,40 @@ const char* getFragmentShaderSource()
         "#version 330 core\n"
         ""
         "uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
+        "uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
         "out vec4 FragColor;"
         ""
         "void main()"
         "{"
-        "   FragColor = vec4(color.r, color.g, color.b, 1.0f);"
+        "   FragColor = vec4(lightColor * color, 1.0f);"
+        "}";
+}
+
+const char* getLightingVertexShaderSource()
+{
+    return
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;"
+        ""
+        "uniform mat4 worldMatrix;"
+        "uniform mat4 viewMatrix = mat4(1.0);"
+        "uniform mat4 projectionMatrix = mat4(1.0);"
+        ""
+        "void main()"
+        "{"
+        "   mat4 modelViewProjection = projectionMatrix * viewMatrix * worldMatrix;"
+        "   gl_Position = modelViewProjection * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
+        "}";
+}
+const char* getLightingFragmentShaderSource()
+{
+    return
+        "#version 330 core\n"
+        "out vec4 FragColor;"
+        ""
+        "void main()"
+        "{"
+        "    FragColor = vec4(1.0f);"
         "}";
 }
 
@@ -1817,7 +1849,8 @@ int main(int argc, char*argv[])
     // Compile and link shaders
     int shaderProgram = compileAndLinkShaders(getVertexShaderSource(), getFragmentShaderSource());
     //int sphereShaderProgram = compileAndLinkShaders(getSphereVertexShaderSource(), getSphereFragmentShaderSource());
-    int sphereShaderProgram = LoadShaders("../Assets/Shaders/SolidColor.vertexshader", "../Assets/Shaders/BlueColor.fragmentshader");
+    //int sphereShaderProgram = LoadShaders("../Assets/Shaders/SolidColor.vertexshader", "../Assets/Shaders/BlueColor.fragmentshader");
+    int lightingShaderProgram = compileAndLinkShaders(getLightingVertexShaderSource(), getLightingFragmentShaderSource());
 
     // We can set the shader once, since we have only one
     glUseProgram(shaderProgram);
@@ -1838,6 +1871,17 @@ int main(int argc, char*argv[])
     GLuint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix");
     glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
 
+    // Set the same perspective and view matrices in the lighting shader program
+    glUseProgram(lightingShaderProgram);
+
+    GLuint lightingProjectionMatrixLocation = glGetUniformLocation(lightingShaderProgram, "projectionMatrix");
+    glUniformMatrix4fv(lightingProjectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+
+    GLuint lightingViewMatrixLocation = glGetUniformLocation(lightingShaderProgram, "viewMatrix");
+    glUniformMatrix4fv(lightingViewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+    glUseProgram(shaderProgram);
+
+
     // Get color uniform locaiton
     GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
      
@@ -1848,6 +1892,7 @@ int main(int argc, char*argv[])
     int lineVAO = createLineSegmentVertexArrayObject();
     int cubeVAO = createCubeVertexArrayObject();
     int sphereVAO = createSphereVertexArrayObject();
+    int lampVAO = createCubeVertexArrayObject();
     
     // For frame time
     float lastFrameTime = glfwGetTime();
@@ -1884,31 +1929,28 @@ int main(int argc, char*argv[])
         // Draw coordinate axis lines
         drawCoordinateAxis(shaderProgram, worldMatrixLocation, colorLocation);
 
-        // Load cube vao
-        //glBindVertexArray(cubeVAO);
+        // Load sphere vao
         glBindVertexArray(sphereVAO);
+
         // Draw Olaf
         drawOlaf(worldMatrixLocation, colorLocation, lastFrameTime);
 
         // Update view and projection matrices
         updateViewAndProjection(shaderProgram);
 
+        // Use lighting shader program
+        glUseProgram(lightingShaderProgram);
+        updateViewAndProjection(lightingShaderProgram);
 
-        //// Draw Sphere
-        //glBindVertexArray(sphereVAO);
-        //glUniform3fv(colorLocation, 1, &white[0]);
+        mat4 modelMatrix = mat4(1.0f);
+        modelMatrix = translate(modelMatrix, lightPos);
+        modelMatrix = scale(modelMatrix, vec3(1.5f));
 
-        //mat4 sphereWorldMatrix = mat4(1.0f);
-        //sphereWorldMatrix = scale(sphereWorldMatrix, vec3(5.0f, 5.0f, 5.0f));
+        GLuint lightingWorldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+        glUniformMatrix4fv(lightingWorldMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
 
-        //glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &sphereWorldMatrix[0][0]);
-        //glCullFace(GL_FRONT);
-        //glDrawArrays(GL_TRIANGLE_STRIP, 0, 1267);
-        //glCullFace(GL_BACK);
-
-        ///*glUseProgram(sphereShaderProgram);
-        //sphere->Draw(sphereShaderProgram);*/
-
+        glBindVertexArray(lampVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
         // End Frame
