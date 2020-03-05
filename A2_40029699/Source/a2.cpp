@@ -80,7 +80,7 @@ float olafScaleAmount = 0.05f;
 // Rendering parameters
 bool drawWithReversedFaceCulling = true;
 GLenum renderMode = GL_TRIANGLE_STRIP;
-int numTriangles = 1267;
+int numTriangles = 1297;
 
 // Lighting position
 vec3 lightPos(5.0f, 8.0f, -2.5f);
@@ -116,7 +116,7 @@ const char* getVertexShaderSource()
         "{"
         "   mat4 modelViewProjection = projectionMatrix * viewMatrix * worldMatrix;"
         "   gl_Position = modelViewProjection * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        "   Normal = aNormal;"
+        "   Normal = mat3(worldMatrix) * aNormal;"
         "   FragPos = vec3(worldMatrix * vec4(aPos, 1.0));"
         "}";
 }
@@ -136,17 +136,42 @@ const char* getFragmentShaderSource()
         ""
         "void main()"
         "{"
-        "   float ambientStrength = 0.45;"
+        "   float ambientStrength = 0.15;"
         "   vec3 ambient = ambientStrength * lightColor;"
         ""
-        "   vec3 norm = normalize(-Normal);"
-        "   vec3 lightDir = normalize(lightPos - FragPos);"
-        "   float diff = max(dot(norm, lightDir), 0.0);"
+        "   vec3 norm = normalize(Normal);"
+        "   vec3 posToLightDir = normalize(lightPos - FragPos);"
+        "   float diff = clamp(dot(posToLightDir, norm), 0 , 1);"
         "   vec3 diffuse = diff * lightColor;"
         ""
         "   vec3 result = (ambient + diffuse) * color;"
         "   FragColor = vec4(result, 1.0f);"
         "}";
+
+        //"#version 330 core\n"
+        //""
+        //"in vec3 Normal;"
+        //"in vec3 FragPos;"
+        //""
+        //"uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
+        //"uniform vec3 lightPos;"
+        //"uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
+        //""
+        //"out vec4 FragColor;"
+        //""
+        //"void main()"
+        //"{"
+        //"   float ambientStrength = 0.15;"
+        //"   vec3 ambient = ambientStrength * lightColor;"
+        //""
+        //"   vec3 norm = normalize(Normal);"
+        //"   vec3 lightDir = normalize(lightPos - FragPos);"
+        //"   float diff = max(dot(norm, lightDir), 0.0);"
+        //"   vec3 diffuse = diff * lightColor;"
+        //""
+        //"   vec3 result = (ambient + diffuse) * color;"
+        //"   FragColor = vec4(result, 1.0f);"
+        //"}";
 }
 
 const char* getLightingVertexShaderSource()
@@ -178,53 +203,6 @@ const char* getLightingFragmentShaderSource()
         "    FragColor = vec4(1.0f);"
         "}";
 }
-
-const char* getSphereVertexShaderSource()
-{
-    return
-        "#version 330 core\n"
-        "\n"
-        "// Input vertex data, different for all executions of this shader.\n"
-        "layout (location = 0) in vec3 vertexPosition_modelspace;\n"
-        "layout (location = 1) in vec3 vertexNormal_modelspace;  // You will need this when you do lighting\n"
-        "layout (location = 2) in vec3 vertexColor;\n"
-        ""
-        "// Values that stay constant for the whole mesh.\n"
-        "uniform mat4 projectionMatrix = mat4(1.0);\n"
-        "uniform mat4 ViewProjectionTransform;\n"
-        "uniform mat4 WorldTransform;\n"
-        "\n"
-        "// Outputs to fragment shader"
-        "out vec3 normal;  // You will need this when you do per-fragment lighting\n"
-        "out vec4 v_color;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "	// Output position of the vertex, in clip space : MVP * position\n"
-        "	gl_Position =  projectionMatrix * ViewProjectionTransform * WorldTransform * vec4(vertexPosition_modelspace,1);\n"
-        "\n"
-        "	normal = vertexNormal_modelspace; // Does this need to be transformed when we pass it to the fragment shader?\n"
-        "	v_color = vec4(vertexColor, 1.0f);\n"
-        "}";
-}
-const char* getSphereFragmentShaderSource()
-{
-    return
-        "#version 330 core\n"
-        "\n"
-        "// Output to fragment shader\n"
-        "out vec3 color;\n"
-        "\n"
-        "in vec4 v_color;\n"
-        "in vec3 normal; // You will need this when you do per-fragment lighting\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "	// set the fragment color to the interpolated vertex color\n"
-        "	color = v_color.rgb;\n"
-        "}";
-}
-
 
 int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentShaderSource)
 {
@@ -280,151 +258,73 @@ int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentSh
     
     return shaderProgram;
 }
-int complieAndLinkSphereShaders(const char* vertexShaderSource, const char* fragmentShaderSource)
+
+int createTestVAO()
 {
-    // Create the shaders
-    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+    float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-    GLint Result = GL_FALSE;
-    int InfoLogLength;
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
 
-    // Compile Vertex Shader
-    cout << "Compiling sphere vertex shader" << endl;
-    glShaderSource(VertexShaderID, 1, &vertexShaderSource, nullptr);
-    glCompileShader(VertexShaderID);
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-    // Check Vertex Shader
-    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(VertexShaderID, InfoLogLength, nullptr, &VertexShaderErrorMessage[0]);
-        printf("%s\n", &VertexShaderErrorMessage[0]);
-    }
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-    // Compile Fragment Shader
-    cout << "Compiling sphere fragment shader" << endl;
-    glShaderSource(FragmentShaderID, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(FragmentShaderID);
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-    // Check Fragment Shader
-    glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(FragmentShaderID, InfoLogLength, nullptr, &FragmentShaderErrorMessage[0]);
-        printf("%s\n", &FragmentShaderErrorMessage[0]);
-    }
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
 
-    // Link the program
-    printf("Linking program\n");
-    GLuint ProgramID = glCreateProgram();
-    glAttachShader(ProgramID, VertexShaderID);
-    glAttachShader(ProgramID, FragmentShaderID);
-    glLinkProgram(ProgramID);
+    // first, configure the cube's VAO (and VBO)
+    unsigned int VBO, cubeVAO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &VBO);
 
-    // Check the program
-    glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
-    glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
-        glGetProgramInfoLog(ProgramID, InfoLogLength, nullptr, &ProgramErrorMessage[0]);
-        printf("%s\n", &ProgramErrorMessage[0]);
-    }
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glDeleteShader(VertexShaderID);
-    glDeleteShader(FragmentShaderID);
+    glBindVertexArray(cubeVAO);
 
-    return ProgramID;
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // normal attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    return cubeVAO;
+
 }
-
-GLuint LoadShaders(std::string vertex_shader_path, std::string fragment_shader_path)
-{
-    // Create the shaders
-    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-    // Read the Vertex Shader code from the file
-    std::string VertexShaderCode;
-    std::ifstream VertexShaderStream(vertex_shader_path, std::ios::in);
-    if (VertexShaderStream.is_open()) {
-        std::string Line = "";
-        while (getline(VertexShaderStream, Line))
-            VertexShaderCode += "\n" + Line;
-        VertexShaderStream.close();
-    }
-    else {
-        printf("Impossible to open %s. Are you in the right directory ? Don't forget to read the FAQ !\n", vertex_shader_path.c_str());
-        getchar();
-        exit(-1);
-    }
-
-    // Read the Fragment Shader code from the file
-    std::string FragmentShaderCode;
-    std::ifstream FragmentShaderStream(fragment_shader_path, std::ios::in);
-    if (FragmentShaderStream.is_open()) {
-        std::string Line = "";
-        while (getline(FragmentShaderStream, Line))
-            FragmentShaderCode += "\n" + Line;
-        FragmentShaderStream.close();
-    }
-
-    GLint Result = GL_FALSE;
-    int InfoLogLength;
-
-    // Compile Vertex Shader
-    printf("Compiling shader : %s\n", vertex_shader_path.c_str());
-    char const* VertexSourcePointer = VertexShaderCode.c_str();
-    glShaderSource(VertexShaderID, 1, &VertexSourcePointer, nullptr);
-    glCompileShader(VertexShaderID);
-
-    // Check Vertex Shader
-    glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(VertexShaderID, InfoLogLength, nullptr, &VertexShaderErrorMessage[0]);
-        printf("%s\n", &VertexShaderErrorMessage[0]);
-    }
-
-    // Compile Fragment Shader
-    printf("Compiling shader : %s\n", fragment_shader_path.c_str());
-    char const* FragmentSourcePointer = FragmentShaderCode.c_str();
-    glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, nullptr);
-    glCompileShader(FragmentShaderID);
-
-    // Check Fragment Shader
-    glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
-    glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
-        glGetShaderInfoLog(FragmentShaderID, InfoLogLength, nullptr, &FragmentShaderErrorMessage[0]);
-        printf("%s\n", &FragmentShaderErrorMessage[0]);
-    }
-
-    // Link the program
-    printf("Linking program\n");
-    GLuint ProgramID = glCreateProgram();
-    glAttachShader(ProgramID, VertexShaderID);
-    glAttachShader(ProgramID, FragmentShaderID);
-    glLinkProgram(ProgramID);
-
-    // Check the program
-    glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
-    glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
-    if (InfoLogLength > 0) {
-        std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
-        glGetProgramInfoLog(ProgramID, InfoLogLength, nullptr, &ProgramErrorMessage[0]);
-        printf("%s\n", &ProgramErrorMessage[0]);
-    }
-
-    glDeleteShader(VertexShaderID);
-    glDeleteShader(FragmentShaderID);
-
-    return ProgramID;
-}
-
 int createLineSegmentVertexArrayObject()
 {
     vec3 vertexArray[] = {
@@ -446,11 +346,11 @@ int createLineSegmentVertexArrayObject()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexArray), vertexArray, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0,                   // attribute 0 matches aPos in Vertex Shader
-                          3,                   // size
-                          GL_FLOAT,            // type
-                          GL_FALSE,            // normalized?
-                          sizeof(vec3),        // stride - each vertex contain 1 vec3 (position)
-                          (void*)0             // array buffer offset
+        3,                   // size
+        GL_FLOAT,            // type
+        GL_FALSE,            // normalized?
+        sizeof(vec3),        // stride - each vertex contain 1 vec3 (position)
+        (void*)0             // array buffer offset
     );
     glEnableVertexAttribArray(0);
 
@@ -3145,8 +3045,6 @@ int main(int argc, char*argv[])
     
     // Compile and link shaders
     int shaderProgram = compileAndLinkShaders(getVertexShaderSource(), getFragmentShaderSource());
-    //int sphereShaderProgram = compileAndLinkShaders(getSphereVertexShaderSource(), getSphereFragmentShaderSource());
-    //int sphereShaderProgram = LoadShaders("../Assets/Shaders/SolidColor.vertexshader", "../Assets/Shaders/BlueColor.fragmentshader");
     int lightingShaderProgram = compileAndLinkShaders(getLightingVertexShaderSource(), getLightingFragmentShaderSource());
 
     // We can set the shader once, since we have only one
@@ -3176,6 +3074,8 @@ int main(int argc, char*argv[])
 
     GLuint lightingViewMatrixLocation = glGetUniformLocation(lightingShaderProgram, "viewMatrix");
     glUniformMatrix4fv(lightingViewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+
+    // Changing back to default shader program
     glUseProgram(shaderProgram);
 
     // Set light position in fragment shader
@@ -3192,8 +3092,9 @@ int main(int argc, char*argv[])
     int lineVAO = createLineSegmentVertexArrayObject();
     int cubeVAO = createCubeVertexArrayObject();
     int sphereVAO = createSphereVertexArrayObject();
+    int testVAO = createTestVAO();
     int lampVAO = createCubeVertexArrayObject();
-    
+
     // For frame time
     float lastFrameTime = glfwGetTime();
     int lastMouseLeftState = GLFW_RELEASE;
@@ -3242,11 +3143,16 @@ int main(int argc, char*argv[])
         glUseProgram(lightingShaderProgram);
         updateViewAndProjection(lightingShaderProgram);
 
+        // Testing moving light 
+        //lightPos = vec3(5.0f, 8.0f, -2.5f) + vec3(0.0f, 0.0f, 15 * sin(glfwGetTime()));
+        //GLuint lightPositionLocation = glGetUniformLocation(shaderProgram, "lightPos");
+        //glUniform3fv(shaderProgram, 1, &lightPos[0]);
+
         mat4 modelMatrix = mat4(1.0f);
         modelMatrix = translate(modelMatrix, lightPos);
         modelMatrix = scale(modelMatrix, vec3(1.5f));
 
-        GLuint lightingWorldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+        GLuint lightingWorldMatrixLocation = glGetUniformLocation(lightingShaderProgram, "worldMatrix");
         glUniformMatrix4fv(lightingWorldMatrixLocation, 1, GL_FALSE, &modelMatrix[0][0]);
 
         glBindVertexArray(lampVAO);
@@ -3304,6 +3210,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         olafScale = 0.6f;
         olafPosition = vec3(0.0f, -1.2f, 0.0f);
         olafLookAt = vec3(1.0f, 0.0f, 0.0f);
+        olafUp = vec3(0.0f, 1.0f, 0.0f);
+        olafSideVector = cross(olafLookAt, olafUp);
     }
 
     // Randomly reposition olaf
