@@ -121,11 +121,16 @@ const char* getFragmentShaderSource()
         ""
         "uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
         "uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
+        ""
         "out vec4 FragColor;"
         ""
         "void main()"
         "{"
-        "   FragColor = vec4(lightColor * color, 1.0f);"
+        "   float ambientStrength = 0.1;"
+        "   vec3 ambient = ambientStrength * lightColor;"
+        ""
+        "   vec3 result = ambient * color;"
+        "   FragColor = vec4(result, 1.0f);"
         "}";
 }
 
