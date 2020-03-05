@@ -128,6 +128,7 @@ const char* getFragmentShaderSource()
         "in vec3 Normal;"
         "in vec3 FragPos;"
         ""
+        "uniform vec3 viewPos;"
         "uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
         "uniform vec3 lightPos;"
         "uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
@@ -140,38 +141,20 @@ const char* getFragmentShaderSource()
         "   vec3 ambient = ambientStrength * lightColor;"
         ""
         "   vec3 norm = normalize(Normal);"
-        "   vec3 posToLightDir = normalize(lightPos - FragPos);"
-        "   float diff = clamp(dot(posToLightDir, norm), 0 , 1);"
+        "   vec3 lightDir = normalize(lightPos - FragPos);"
+        "   float diff = max(dot(norm, lightDir), 0.0);"
         "   vec3 diffuse = diff * lightColor;"
         ""
-        "   vec3 result = (ambient + diffuse) * color;"
+        "   float specularStrength = 0.5;"
+        "   vec3 viewDir = normalize(viewPos - FragPos);"
+        "   vec3 reflectDir = reflect(-lightDir, norm);"
+        ""
+        "   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);"
+        "   vec3 specular = specularStrength * spec * lightColor;"
+        ""
+        "   vec3 result = (ambient + diffuse + specular) * color;"
         "   FragColor = vec4(result, 1.0f);"
         "}";
-
-        //"#version 330 core\n"
-        //""
-        //"in vec3 Normal;"
-        //"in vec3 FragPos;"
-        //""
-        //"uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
-        //"uniform vec3 lightPos;"
-        //"uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
-        //""
-        //"out vec4 FragColor;"
-        //""
-        //"void main()"
-        //"{"
-        //"   float ambientStrength = 0.15;"
-        //"   vec3 ambient = ambientStrength * lightColor;"
-        //""
-        //"   vec3 norm = normalize(Normal);"
-        //"   vec3 lightDir = normalize(lightPos - FragPos);"
-        //"   float diff = max(dot(norm, lightDir), 0.0);"
-        //"   vec3 diffuse = diff * lightColor;"
-        //""
-        //"   vec3 result = (ambient + diffuse) * color;"
-        //"   FragColor = vec4(result, 1.0f);"
-        //"}";
 }
 
 const char* getLightingVertexShaderSource()
@@ -3080,7 +3063,11 @@ int main(int argc, char*argv[])
 
     // Set light position in fragment shader
     GLuint lightPositionLocation = glGetUniformLocation(shaderProgram, "lightPos");
-    glUniform3fv(shaderProgram, 1, &lightPos[0]);
+    glUniform3fv(lightPositionLocation, 1, &lightPos[0]);
+
+    // Set camera position in fragment shader
+    GLuint viewPositionLocation = glGetUniformLocation(shaderProgram, "viewPos");
+    glUniform3fv(viewPositionLocation, 1, &cameraPosition[0]);
 
     // Get color uniform locaiton
     GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
@@ -3143,7 +3130,7 @@ int main(int argc, char*argv[])
         glUseProgram(lightingShaderProgram);
         updateViewAndProjection(lightingShaderProgram);
 
-        // Testing moving light 
+        //// Testing moving light 
         //lightPos = vec3(5.0f, 8.0f, -2.5f) + vec3(0.0f, 0.0f, 15 * sin(glfwGetTime()));
         //GLuint lightPositionLocation = glGetUniformLocation(shaderProgram, "lightPos");
         //glUniform3fv(shaderProgram, 1, &lightPos[0]);
