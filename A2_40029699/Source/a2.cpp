@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <list>
 
 #define GLEW_STATIC 1   // This allows linking with Static Library on Windows, without DLL
@@ -98,95 +99,33 @@ vec3 orange(1.0f, 0.5f, 0.31f);
 vec3 brown(0.5f, 0.38f, 0.38f);
 vec3 darkBlue(0.06f, 0.22f, 0.54f);
 
-const char* getVertexShaderSource()
+string loadShaderFile(const char* shaderPath)
 {
-    return
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;"
-        "layout (location = 1) in vec3 aNormal;"
-        ""
-        "uniform mat4 worldMatrix;"
-        "uniform mat4 viewMatrix = mat4(1.0);"
-        "uniform mat4 projectionMatrix = mat4(1.0);"
-        ""
-        "out vec3 Normal;"
-        "out vec3 FragPos;"
-        ""
-        "void main()"
-        "{"
-        "   mat4 modelViewProjection = projectionMatrix * viewMatrix * worldMatrix;"
-        "   gl_Position = modelViewProjection * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        "   Normal = mat3(worldMatrix) * aNormal;"
-        "   FragPos = vec3(worldMatrix * vec4(aPos, 1.0));"
-        "}";
-}
-const char* getFragmentShaderSource()
-{
-    return
-        "#version 330 core\n"
-        ""
-        "in vec3 Normal;"
-        "in vec3 FragPos;"
-        ""
-        "uniform vec3 viewPos;"
-        "uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);"
-        "uniform vec3 lightPos;"
-        "uniform vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);"
-        ""
-        "out vec4 FragColor;"
-        ""
-        "void main()"
-        "{"
-        "   float ambientStrength = 0.15;"
-        "   vec3 ambient = ambientStrength * lightColor;"
-        ""
-        "   vec3 norm = normalize(Normal);"
-        "   vec3 lightDir = normalize(lightPos - FragPos);"
-        "   float diff = max(dot(norm, lightDir), 0.0);"
-        "   vec3 diffuse = diff * lightColor;"
-        ""
-        "   float specularStrength = 0.5;"
-        "   vec3 viewDir = normalize(viewPos - FragPos);"
-        "   vec3 reflectDir = reflect(-lightDir, norm);"
-        ""
-        "   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);"
-        "   vec3 specular = specularStrength * spec * lightColor;"
-        ""
-        "   vec3 result = (ambient + diffuse + specular) * color;"
-        "   FragColor = vec4(result, 1.0f);"
-        "}";
-}
+    string shaderCode;
+    ifstream shaderFile;
+    shaderFile.exceptions(ifstream::failbit | ifstream::badbit);
 
-const char* getLightingVertexShaderSource()
-{
-    return
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;"
-        ""
-        "uniform mat4 worldMatrix;"
-        "uniform mat4 viewMatrix = mat4(1.0);"
-        "uniform mat4 projectionMatrix = mat4(1.0);"
-        ""
-        "in vec3 Normal;"
-        ""
-        "void main()"
-        "{"
-        "   mat4 modelViewProjection = projectionMatrix * viewMatrix * worldMatrix;"
-        "   gl_Position = modelViewProjection * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        "}";
-}
-const char* getLightingFragmentShaderSource()
-{
-    return
-        "#version 330 core\n"
-        "out vec4 FragColor;"
-        ""
-        "void main()"
-        "{"
-        "    FragColor = vec4(1.0f);"
-        "}";
-}
+    try
+    {
+        shaderFile.open(shaderPath);
+        stringstream shaderStream;
+        
+        // Read the file contents
+        shaderStream << shaderFile.rdbuf();
 
+        // Close file handlers
+        shaderFile.close();
+
+        // Convert stream to string
+        shaderCode = shaderStream.str();
+    }
+    catch (ifstream::failure e)
+    {
+        cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << endl;
+    }
+
+    return shaderCode;
+}
 int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentShaderSource)
 {
     // compile and link shader program
@@ -3027,8 +2966,13 @@ int main(int argc, char*argv[])
     glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f);
     
     // Compile and link shaders
-    int shaderProgram = compileAndLinkShaders(getVertexShaderSource(), getFragmentShaderSource());
-    int lightingShaderProgram = compileAndLinkShaders(getLightingVertexShaderSource(), getLightingFragmentShaderSource());
+    string vertexCode = loadShaderFile("../Assets/Shaders/shader.vs");
+    string fragmentCode = loadShaderFile("../Assets/Shaders/shader.fs");
+    int shaderProgram = compileAndLinkShaders(vertexCode.c_str(), fragmentCode.c_str());
+
+    string lightingVertexCode = loadShaderFile("../Assets/Shaders/lightingShader.vs");
+    string lightingFragmentCode = loadShaderFile("../Assets/Shaders/lightingShader.fs");
+    int lightingShaderProgram = compileAndLinkShaders(lightingVertexCode.c_str(), lightingFragmentCode.c_str());
 
     // We can set the shader once, since we have only one
     glUseProgram(shaderProgram);
