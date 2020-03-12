@@ -12,7 +12,7 @@ out vec4 FragColor;
 
 void main()
 {
-   float ambientStrength = 0.1;
+   float ambientStrength = 0.2f;
    vec3 ambient = ambientStrength * lightColor;
 
    vec3 norm = normalize(Normal);

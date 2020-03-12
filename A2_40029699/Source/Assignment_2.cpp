@@ -8,13 +8,14 @@
 #include <GL/glew.h>    // Include GLEW - OpenGL Extension Wrangler
 
 #include <GLFW/glfw3.h> // cross-platform interface for creating a graphical context,
-                        // initializing OpenGL and binding inputs
+// initializing OpenGL and binding inputs
 
-#include <glm/glm.hpp>  // GLM is an optimized math library with syntax to similar to OpenGL Shading Language
+#include <glm/glm.hpp>                  // GLM is an optimized math library with syntax to similar to OpenGL Shading Language
 #include <glm/gtc/matrix_transform.hpp> // include this to create transformation matrices
 #include <glm/common.hpp>
+#include <FreeImageIO.h>                // Used to load textures
 
-#include "SphereModel.h"
+//#include "SphereModel.h"
 
 using namespace glm;
 using namespace std;
@@ -22,6 +23,7 @@ using namespace std;
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void processUserInput(GLFWwindow* window);
 void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
+void drawGround(int shaderProgram, GLuint worldMatrixLocation);
 void drawCoordinateAxis(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
 void drawOlaf(GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime);
 void updateViewAndProjection(int shaderProgram);
@@ -32,6 +34,7 @@ int SCREEN_HEIGHT = 768;
 
 // Grid parameters
 int sizeOfGrid = 100;
+bool showGrid = false;
 
 // Camera parameters for view transform
 vec3 cameraPosition(15.0f, 5.0f, 15.0f);
@@ -99,6 +102,9 @@ vec3 orange(1.0f, 0.5f, 0.31f);
 vec3 brown(0.5f, 0.38f, 0.38f);
 vec3 darkBlue(0.06f, 0.22f, 0.54f);
 
+// Textures
+GLuint snowTextureID;
+
 string loadShaderFile(const char* shaderPath)
 {
     string shaderCode;
@@ -109,7 +115,7 @@ string loadShaderFile(const char* shaderPath)
     {
         shaderFile.open(shaderPath);
         stringstream shaderStream;
-        
+
         // Read the file contents
         shaderStream << shaderFile.rdbuf();
 
@@ -137,7 +143,7 @@ int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentSh
     //const char* vertexShaderSource = getVertexShaderSource();
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
-    
+
     // check for shader compile errors
     int success;
     char infoLog[512];
@@ -147,13 +153,13 @@ int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentSh
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
-    
+
     // fragment shader
     int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     //const char* fragmentShaderSource = getFragmentShaderSource();
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
-    
+
     // check for shader compile errors
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
@@ -161,23 +167,23 @@ int compileAndLinkShaders(const char* vertexShaderSource, const char* fragmentSh
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
-    
+
     // link shaders
     int shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-    
+
     // check for linking errors
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
-    
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    
+
     return shaderProgram;
 }
 
@@ -278,66 +284,65 @@ int createLineSegmentVertexArrayObject()
 
     return vertexArrayObject;
 }
-int createCubeVertexArrayObject()
+int createTexturedCubeVertexArrayObject()
 {
-    // Cube model
-    vec3 vertexArray[] = {
-       // position
-       vec3(-0.5f,-0.5f,-0.5f),
-       vec3(-0.5f,-0.5f, 0.5f),
-       vec3(-0.5f, 0.5f, 0.5f),
+    // Cube model w/ position and texture 
+    float vertexArray[] = {
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
+        -0.5f,-0.5f, 0.5f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
 
-       vec3(-0.5f,-0.5f,-0.5f),
-       vec3(-0.5f, 0.5f, 0.5f),
-       vec3(-0.5f, 0.5f,-0.5f),
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, 0.5f,-0.5f, 1.0f, 0.0f,
 
-       vec3(0.5f, 0.5f,-0.5f),
-       vec3(-0.5f,-0.5f,-0.5f),
-       vec3(-0.5f, 0.5f,-0.5f),
+        0.5f, 0.5f,-0.5f,  1.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
+        -0.5f, 0.5f,-0.5f, 0.0f, 1.0f,
 
-       vec3(0.5f, 0.5f,-0.5f),
-       vec3(0.5f,-0.5f,-0.5f),
-       vec3(-0.5f,-0.5f,-0.5f),
+        0.5f, 0.5f,-0.5f,  1.0f, 1.0f,
+        0.5f,-0.5f,-0.5f,  1.0f, 0.0f,
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
 
-       vec3(0.5f,-0.5f, 0.5f),
-       vec3(-0.5f,-0.5f,-0.5f),
-       vec3(0.5f,-0.5f,-0.5f),
+        0.5f,-0.5f, 0.5f,  1.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
+        0.5f,-0.5f,-0.5f,  1.0f, 0.0f,
 
-       vec3(0.5f,-0.5f, 0.5f),
-       vec3(-0.5f,-0.5f, 0.5f),
-       vec3(-0.5f,-0.5f,-0.5f),
+        0.5f,-0.5f, 0.5f,  1.0f, 1.0f,
+        -0.5f,-0.5f, 0.5f, 0.0f, 1.0f,
+        -0.5f,-0.5f,-0.5f, 0.0f, 0.0f,
 
-       vec3(-0.5f, 0.5f, 0.5f),
-       vec3(-0.5f,-0.5f, 0.5f),
-       vec3(0.5f,-0.5f, 0.5f),
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
+        -0.5f,-0.5f, 0.5f, 0.0f, 0.0f,
+        0.5f,-0.5f, 0.5f,  1.0f, 0.0f,
 
-       vec3(0.5f, 0.5f, 0.5f),
-       vec3(-0.5f, 0.5f, 0.5f),
-       vec3(0.5f,-0.5f, 0.5f),
+        0.5f, 0.5f, 0.5f,  1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
+        0.5f,-0.5f, 0.5f,  1.0f, 0.0f,
 
-       vec3(0.5f, 0.5f, 0.5f),
-       vec3(0.5f,-0.5f,-0.5f),
-       vec3(0.5f, 0.5f,-0.5f),
+        0.5f, 0.5f, 0.5f,  1.0f, 1.0f,
+        0.5f,-0.5f,-0.5f,  0.0f, 0.0f,
+        0.5f, 0.5f,-0.5f,  1.0f, 0.0f,
 
-       vec3(0.5f,-0.5f,-0.5f),
-       vec3(0.5f, 0.5f, 0.5f),
-       vec3(0.5f,-0.5f, 0.5f),
+        0.5f,-0.5f,-0.5f,  0.0f, 0.0f,
+        0.5f, 0.5f, 0.5f,  1.0f, 1.0f,
+        0.5f,-0.5f, 0.5f,  0.0f, 1.0f,
 
-       vec3(0.5f, 0.5f, 0.5f),
-       vec3(0.5f, 0.5f,-0.5f),
-       vec3(-0.5f, 0.5f,-0.5f),
+        0.5f, 0.5f, 0.5f,  1.0f, 1.0f,
+        0.5f, 0.5f,-0.5f,  1.0f, 0.0f,
+        -0.5f, 0.5f,-0.5f, 0.0f, 0.0f,
 
-       vec3(0.5f, 0.5f, 0.5f),
-       vec3(-0.5f, 0.5f,-0.5f),
-       vec3(-0.5f, 0.5f, 0.5f)
+        0.5f, 0.5f, 0.5f,  1.0f, 1.0f,
+        -0.5f, 0.5f,-0.5f, 0.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f
     };
-    
+
     // Create a vertex array
     GLuint vertexArrayObject;
     glGenVertexArrays(1, &vertexArrayObject);
     glBindVertexArray(vertexArrayObject);
-    
-    
+
+
     // Upload Vertex Buffer to the GPU, keep a reference to it (vertexBufferObject)
     GLuint vertexBufferObject;
     glGenBuffers(1, &vertexBufferObject);
@@ -345,14 +350,100 @@ int createCubeVertexArrayObject()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexArray), vertexArray, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0,                   // attribute 0 matches aPos in Vertex Shader
-                          3,                   // size
-                          GL_FLOAT,            // type
-                          GL_FALSE,            // normalized?
-                          sizeof(vec3),        // stride - each vertex contain 1 vec3 (position)
-                          (void*)0             // array buffer offset
-                          );
+        3,                   // size
+        GL_FLOAT,            // type
+        GL_FALSE,            // normalized?
+        5 * sizeof(float),   // stride - each vertex contain 1 vec3 (position)
+        (void*)0             // array buffer offset
+    );
     glEnableVertexAttribArray(0);
-    
+
+    glVertexAttribPointer(1,                            // attribute 0 matches aPos in Vertex Shader
+        2,                            // size
+        GL_FLOAT,                     // type
+        GL_FALSE,                     // normalized?
+        5 * sizeof(float),            // stride - each vertex contain 1 vec3 (position)
+        (void*)(3 * sizeof(float))    // array buffer offset
+    );
+    glEnableVertexAttribArray(1);
+
+    return vertexArrayObject;
+}
+int createCubeVertexArrayObject()
+{
+    // Cube model w/ position
+    vec3 vertexArray[] = {
+        // position
+        vec3(-0.5f,-0.5f,-0.5f),
+        vec3(-0.5f,-0.5f, 0.5f),
+        vec3(-0.5f, 0.5f, 0.5f),
+
+        vec3(-0.5f,-0.5f,-0.5f),
+        vec3(-0.5f, 0.5f, 0.5f),
+        vec3(-0.5f, 0.5f,-0.5f),
+
+        vec3(0.5f, 0.5f,-0.5f),
+        vec3(-0.5f,-0.5f,-0.5f),
+        vec3(-0.5f, 0.5f,-0.5f),
+
+        vec3(0.5f, 0.5f,-0.5f),
+        vec3(0.5f,-0.5f,-0.5f),
+        vec3(-0.5f,-0.5f,-0.5f),
+
+        vec3(0.5f,-0.5f, 0.5f),
+        vec3(-0.5f,-0.5f,-0.5f),
+        vec3(0.5f,-0.5f,-0.5f),
+
+        vec3(0.5f,-0.5f, 0.5f),
+        vec3(-0.5f,-0.5f, 0.5f),
+        vec3(-0.5f,-0.5f,-0.5f),
+
+        vec3(-0.5f, 0.5f, 0.5f),
+        vec3(-0.5f,-0.5f, 0.5f),
+        vec3(0.5f,-0.5f, 0.5f),
+
+        vec3(0.5f, 0.5f, 0.5f),
+        vec3(-0.5f, 0.5f, 0.5f),
+        vec3(0.5f,-0.5f, 0.5f),
+
+        vec3(0.5f, 0.5f, 0.5f),
+        vec3(0.5f,-0.5f,-0.5f),
+        vec3(0.5f, 0.5f,-0.5f),
+
+        vec3(0.5f,-0.5f,-0.5f),
+        vec3(0.5f, 0.5f, 0.5f),
+        vec3(0.5f,-0.5f, 0.5f),
+
+        vec3(0.5f, 0.5f, 0.5f),
+        vec3(0.5f, 0.5f,-0.5f),
+        vec3(-0.5f, 0.5f,-0.5f),
+
+        vec3(0.5f, 0.5f, 0.5f),
+        vec3(-0.5f, 0.5f,-0.5f),
+        vec3(-0.5f, 0.5f, 0.5f)
+    };
+
+    // Create a vertex array
+    GLuint vertexArrayObject;
+    glGenVertexArrays(1, &vertexArrayObject);
+    glBindVertexArray(vertexArrayObject);
+
+
+    // Upload Vertex Buffer to the GPU, keep a reference to it (vertexBufferObject)
+    GLuint vertexBufferObject;
+    glGenBuffers(1, &vertexBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexArray), vertexArray, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0,                   // attribute 0 matches aPos in Vertex Shader
+        3,                   // size
+        GL_FLOAT,            // type
+        GL_FALSE,            // normalized?
+        sizeof(vec3),        // stride - each vertex contain 1 vec3 (position)
+        (void*)0             // array buffer offset
+    );
+    glEnableVertexAttribArray(0);
+
     return vertexArrayObject;
 }
 int createSphereVertexArrayObject()
@@ -1621,7 +1712,7 @@ int createSphereVertexArrayObject()
         vec3(0.173648, -0.000000, -0.984808),
         vec3(0.000000, 0.000000, -1.000000)
     };*/
-    
+
     // Sphere data positon + normal
     vec3 vertexArray[] = {
         vec3(0.000000, 0.000000, -1.000000), vec3(0.000000, 0.000000, -1.000000),
@@ -2901,32 +2992,86 @@ int createSphereVertexArrayObject()
 
     // Reading position data
     glVertexAttribPointer(0,                   // attribute 0 matches aPos in Vertex Shader
-                          3,                   // size
-                          GL_FLOAT,            // type
-                          GL_FALSE,            // normalized?
-                          2 * sizeof(vec3),    // stride - each vertex contain 1 vec3 (position)
-                          (void*)0             // array buffer offset
+        3,                   // size
+        GL_FLOAT,            // type
+        GL_FALSE,            // normalized?
+        2 * sizeof(vec3),    // stride - each vertex contain 1 vec3 (position)
+        (void*)0             // array buffer offset
     );
     glEnableVertexAttribArray(0);
 
     // Reading normal data
     glVertexAttribPointer(1,                    // attribute 1 matches aNormal in Vertex Shader
-                          3,                    // size
-                          GL_FLOAT,             // type
-                          GL_FALSE,             // normalized?
-                          2 * sizeof(vec3),     // stride - each vertex contain 1 vec3 (position)
-                          (void*)(sizeof(vec3)) // array buffer offset
+        3,                    // size
+        GL_FLOAT,             // type
+        GL_FALSE,             // normalized?
+        2 * sizeof(vec3),     // stride - each vertex contain 1 vec3 (position)
+        (void*)(sizeof(vec3)) // array buffer offset
     );
     glEnableVertexAttribArray(1);
 
     return vertexArrayObject;
 }
 
-int main(int argc, char*argv[])
+int loadTexture(char* imagepath)
+{
+    // Load image using the Free Image library
+    FREE_IMAGE_FORMAT format = FreeImage_GetFileType(imagepath, 0);
+    FIBITMAP* image = FreeImage_Load(format, imagepath);
+    FIBITMAP* image32bits = FreeImage_ConvertTo32Bits(image);
+
+    // Get an available texture index from OpenGL
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    assert(texture != 0);
+
+    // Set OpenGL filtering properties (bi-linear interpolation)
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Retrieve width and hight
+    int width = FreeImage_GetWidth(image32bits);
+    int height = FreeImage_GetHeight(image32bits);
+
+    // This will upload the texture to the GPU memory
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
+        0, GL_BGRA, GL_UNSIGNED_BYTE, (void*)FreeImage_GetBits(image32bits));
+
+    // Free images
+    FreeImage_Unload(image);
+    FreeImage_Unload(image32bits);
+
+    return texture;
+}
+
+void setProjectionMatrix(int shaderProgram, mat4 projectionMatrix)
+{
+    glUseProgram(shaderProgram);
+    GLuint projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
+    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+}
+
+void setViewMatrix(int shaderProgram, mat4 viewMatrix)
+{
+    glUseProgram(shaderProgram);
+    GLuint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix");
+    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+}
+
+void setWorldMatrix(int shaderProgram, mat4 worldMatrix)
+{
+    glUseProgram(shaderProgram);
+    GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+    glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &worldMatrix[0][0]);
+}
+
+
+int main(int argc, char* argv[])
 {
     // Initialize GLFW and OpenGL version
     glfwInit();
-    
+
 #if defined(PLATFORM_OSX)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -2937,7 +3082,7 @@ int main(int argc, char*argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 #endif
-    
+
     // Create Window and rendering context using GLFW, resolution is 800x600
     GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "COMP-371 Winter 2020 Assignment 2", NULL, NULL);
     if (window == NULL)
@@ -2964,7 +3109,10 @@ int main(int argc, char*argv[])
 
     // Set background color
     glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0f);
-    
+
+    // Load textures
+    snowTextureID = loadTexture("../Assets/Textures/snow.jpg");
+
     // Compile and link shaders
     string vertexCode = loadShaderFile("../Assets/Shaders/shader.vs");
     string fragmentCode = loadShaderFile("../Assets/Shaders/shader.fs");
@@ -2974,33 +3122,27 @@ int main(int argc, char*argv[])
     string lightingFragmentCode = loadShaderFile("../Assets/Shaders/lightingShader.fs");
     int lightingShaderProgram = compileAndLinkShaders(lightingVertexCode.c_str(), lightingFragmentCode.c_str());
 
-    // We can set the shader once, since we have only one
-    glUseProgram(shaderProgram);
-    
-    // Set projection matrix for shader
+    string textureVertexCode = loadShaderFile("../Assets/Shaders/textureShader.vs");
+    string textureFragmentCode = loadShaderFile("../Assets/Shaders/textureShader.fs");
+    int textureShaderProgram = compileAndLinkShaders(textureVertexCode.c_str(), textureFragmentCode.c_str());
+
+    // Set projection matrix
     mat4 projectionMatrix = glm::perspective(camera_fov,                           // field of view in degrees
                                              (float)SCREEN_WIDTH / SCREEN_HEIGHT,  // aspect ratio
                                              0.01f, 100.0f);                       // near and far (near > 0)
-    
-    GLuint projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
-    glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+
+    setProjectionMatrix(shaderProgram, projectionMatrix);
+    setProjectionMatrix(lightingShaderProgram, projectionMatrix);
+    setProjectionMatrix(textureShaderProgram, projectionMatrix);
 
     // Set initial view matrix
     mat4 viewMatrix = lookAt(cameraPosition,                 // eye
                              cameraPosition + cameraLookAt,  // center
                              cameraUp);                      // up
-    
-    GLuint viewMatrixLocation = glGetUniformLocation(shaderProgram, "viewMatrix");
-    glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
 
-    // Set the same perspective and view matrices in the lighting shader program
-    glUseProgram(lightingShaderProgram);
-
-    GLuint lightingProjectionMatrixLocation = glGetUniformLocation(lightingShaderProgram, "projectionMatrix");
-    glUniformMatrix4fv(lightingProjectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
-
-    GLuint lightingViewMatrixLocation = glGetUniformLocation(lightingShaderProgram, "viewMatrix");
-    glUniformMatrix4fv(lightingViewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+    setViewMatrix(shaderProgram, viewMatrix);
+    setViewMatrix(lightingShaderProgram, viewMatrix);
+    setViewMatrix(textureShaderProgram, viewMatrix);
 
     // Changing back to default shader program
     glUseProgram(shaderProgram);
@@ -3015,9 +3157,13 @@ int main(int argc, char*argv[])
 
     // Get color uniform locaiton
     GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
-     
+
     // Get world uniform locaiton
     GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+
+    // Get world uniform locaiton
+    GLuint textureWorldMatrixLocation = glGetUniformLocation(textureShaderProgram, "worldMatrix");
+
 
     // Define and upload geometry to the GPU here
     int lineVAO = createLineSegmentVertexArrayObject();
@@ -3025,22 +3171,22 @@ int main(int argc, char*argv[])
     int sphereVAO = createSphereVertexArrayObject();
     int testVAO = createTestVAO();
     int lampVAO = createCubeVertexArrayObject();
+    int texturedCubeVAO = createTexturedCubeVertexArrayObject();
 
     // For frame time
     float lastFrameTime = glfwGetTime();
     int lastMouseLeftState = GLFW_RELEASE;
     glfwGetCursorPos(window, &lastMousePosX, &lastMousePosY);
-    
+
     // Enable Backface culling
     glEnable(GL_CULL_FACE);
 
     // Enable Depth Test
     glEnable(GL_DEPTH_TEST);
-    
-    SphereModel* sphere = new SphereModel(vec3(10.0f, 10.0f, 10.0f));
+
 
     // Entering Main Loop
-    while(!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window))
     {
         // Frame time calculation
         dt = glfwGetTime() - lastFrameTime;
@@ -3048,7 +3194,16 @@ int main(int argc, char*argv[])
 
         // Clear Color Buffer Bit and Depth Buffer Bit 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-         
+
+        // Use texture shader program
+        glUseProgram(textureShaderProgram);
+
+        // Load texture cube vao
+        glBindVertexArray(texturedCubeVAO);
+
+        // Draw snow ground
+        drawGround(textureShaderProgram, textureWorldMatrixLocation);
+
         // Use Assignment 1 shader program
         glUseProgram(shaderProgram);
 
@@ -3070,6 +3225,10 @@ int main(int argc, char*argv[])
         // Update view and projection matrices
         updateViewAndProjection(shaderProgram);
 
+        // Update texture shader program
+        glUseProgram(textureShaderProgram);
+        updateViewAndProjection(textureShaderProgram);
+
         // Use lighting shader program
         glUseProgram(lightingShaderProgram);
         updateViewAndProjection(lightingShaderProgram);
@@ -3089,7 +3248,6 @@ int main(int argc, char*argv[])
         glBindVertexArray(lampVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-
         // End Frame
         glfwSwapBuffers(window);
 
@@ -3100,11 +3258,11 @@ int main(int argc, char*argv[])
         processUserInput(window);
 
     }
-    
+
     // Shutdown GLFW
     glfwTerminate();
-    
-	return 0;
+
+    return 0;
 }
 
 float getRandomFloat(float start, float end) {
@@ -3123,7 +3281,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         cameraPosition = vec3(15.0f, 5.0f, 15.0f);
         cameraLookAt = normalize(vec3(-15.0f, -5.0f, -15.0f));
         cameraUp = vec3(0.0f, 1.0f, 0.0f);
-        
+
         cameraSideVector = cross(cameraLookAt, cameraUp);
         camera_fov = 70.0f;
 
@@ -3149,8 +3307,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
         olafPosition = vec3(getRandomFloat(-(float)sizeOfGrid / 2, (float)sizeOfGrid / 2),
-                            0.0f,
-                            getRandomFloat(-(float)sizeOfGrid / 2, (float)sizeOfGrid / 2));
+            0.0f,
+            getRandomFloat(-(float)sizeOfGrid / 2, (float)sizeOfGrid / 2));
     }
 
     // Scale up olaf
@@ -3173,6 +3331,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     // Set render mode to points
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
     {
+        showGrid = false;
         renderMode = GL_POINTS;
         glDisable(GL_CULL_FACE);
     }
@@ -3180,6 +3339,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     // Set render mode to lines
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
     {
+        showGrid = true;
         renderMode = GL_TRIANGLE_STRIP;
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
@@ -3188,6 +3348,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     // Set render mode to triangles
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
     {
+        showGrid = false;
         renderMode = GL_TRIANGLE_STRIP;
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
@@ -3365,7 +3526,8 @@ void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
         {
             worldMatrix = translate(worldMatrix, vec3(1, 0, 0));
             glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &worldMatrix[0][0]);
-            glDrawArrays(GL_LINES, 0, 2);
+            if (showGrid) 
+                glDrawArrays(GL_LINES, 0, 2);
         }
         worldMatrix = translate(worldMatrix, vec3(-sizeOfGrid, 0, 1));
     }
@@ -3381,10 +3543,25 @@ void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
         {
             worldMatrix = translate(worldMatrix, vec3(0, 0, -1));
             glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &worldMatrix[0][0]);
-            glDrawArrays(GL_LINES, 0, 2);
+            if (showGrid)
+                glDrawArrays(GL_LINES, 0, 2);
         }
         worldMatrix = translate(worldMatrix, vec3(1, 0, sizeOfGrid + 1));
     }
+}
+
+void drawGround(int shaderProgram, GLuint worldMatrixLocation)
+{
+    // Draw snow ground
+    glActiveTexture(GL_TEXTURE0);
+    GLuint textureLocation = glGetUniformLocation(shaderProgram, "textureSampler");
+    glBindTexture(GL_TEXTURE_2D, snowTextureID);
+    glUniform1i(textureLocation, 0);                // Set our Texture sampler to user Texture Unit 0
+
+    mat4 groundWorldMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, 0.0f)) * scale(mat4(1.0f), vec3(sizeOfGrid, 0.02f, sizeOfGrid));
+    glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &groundWorldMatrix[0][0]);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36); // 36 vertices, starting at index 0
 }
 
 void drawCoordinateAxis(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation)
@@ -3715,8 +3892,8 @@ void updateViewAndProjection(int shaderProgram)
     // Update projection matrix
     GLuint projectionMatrixLocation = glGetUniformLocation(shaderProgram, "projectionMatrix");
     mat4 projectionMatrix = perspective(camera_fov,                                     // field of view in degrees
-                                        (float)SCREEN_WIDTH / SCREEN_HEIGHT,            // aspect ratio
-                                        0.01f, 100.0f);                                 // near and far (near > 0)
+        (float)SCREEN_WIDTH / SCREEN_HEIGHT,            // aspect ratio
+        0.01f, 100.0f);                                 // near and far (near > 0)
     glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
 
     // Update view matrix
