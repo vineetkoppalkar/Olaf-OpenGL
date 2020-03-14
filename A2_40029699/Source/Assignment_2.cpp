@@ -3881,19 +3881,34 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafHatTopMatrix[0][0]);
     drawObject();
 
+    float initialArmAngle = 70.0f;
     float armPivotLength = 1.25f;
-    float armAngle = (int)(40 * sin(lastFrameTime)) % 75;
-    float armDistanceFromTorso = 0.85f;
+    float armAngle = (int)(40 * sin(lastFrameTime * 5)) % 75;
+    float armDistanceFromTorso = 1.0f;
     float gloveDistance = 0.75f;
 
     // Olaf right arm
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafRightArmWorldMatrix = olafTorsoWorldMatrix;
-    olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
-    olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(-armAngle)), -sin(radians(-armAngle)), 0.0f));
-    olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(-armAngle), vec3(0.0f, 0.0f, 1.0f));
-    olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+
+    if (moveForwardAndBack)
+    {
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 1.4f, 0.0f));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(armAngle)), -sin(radians(armAngle))));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(armAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+        olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+    }
+    else
+    {
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(-armAngle)), -sin(radians(-armAngle)), 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(-armAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+    }
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafRightArmWorldMatrix[0][0]);
     drawObject();
@@ -3925,10 +3940,24 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafLeftArmWorldMatrix = olafTorsoWorldMatrix;
-    olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
-    olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(armAngle)), sin(radians(armAngle)), 0.0f));
-    olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(armAngle), vec3(0.0f, 0.0f, 1.0f));
-    olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+
+    if (moveForwardAndBack)
+    {
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 1.4f, 0.0f));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(-armAngle)), -sin(radians(-armAngle))));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-armAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+        olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+    }
+    else
+    {
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(armAngle)), sin(radians(armAngle)), 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(armAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+    }
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafLeftArmWorldMatrix[0][0]);
     drawObject();
