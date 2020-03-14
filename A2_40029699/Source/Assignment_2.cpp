@@ -69,6 +69,11 @@ bool isLeftMouseBtnHeld = false;
 bool isRightMouseBtnHeld = false;
 bool isMiddleMouseBtnHeld = false;
 
+// Controls
+bool isHoldingShift = false;
+bool moveForwardAndBack = false;
+bool moveLeftRight = false;
+
 // Olaf parameters
 vec3 olafPosition(0.0f, -1.2f, 0.0f);
 vec3 olafLookAt(1.0f, 0.0f, 0.0f);
@@ -3376,25 +3381,29 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
 void processUserInput(GLFWwindow* window)
 {
-    // Close window on esecape
+    // Close window on escape
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
     }
 
     // Used to translate Olaf
-    bool isHoldingShift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+    isHoldingShift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+    moveForwardAndBack = false;
+    moveLeftRight = false;
 
     // Move olaf forward
     if (isHoldingShift && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     {
         olafPosition += olafLookAt * olafSpeed * dt;
+        moveForwardAndBack = true;
     }
 
     // Move olaf backward
     if (isHoldingShift && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
         olafPosition -= olafLookAt * olafSpeed * dt;
+        moveForwardAndBack = true;
     }
 
     // Move olaf left
@@ -3403,12 +3412,14 @@ void processUserInput(GLFWwindow* window)
         if (isHoldingShift)
         {
             olafPosition -= olafSideVector * olafSpeed * dt;
+            moveLeftRight = true;
         }
         else
         {
             olafAngle += olafRotationAmount;
             olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
             olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
         }
     }
 
@@ -3418,12 +3429,14 @@ void processUserInput(GLFWwindow* window)
         if (isHoldingShift)
         {
             olafPosition += olafSideVector * olafSpeed * dt;
+            moveLeftRight = true;
         }
         else
         {
             olafAngle -= olafRotationAmount;
             olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
             olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
         }
     }
 
@@ -3698,11 +3711,31 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     glPointSize(0.01);
     glLineWidth(0.01);
 
+
+    float footAngle = 0.0f;
+    float footDistanceFromBase = 1.0f;
+    if (moveForwardAndBack)
+    {
+        footAngle = (int)(40 * sin(lastFrameTime * 5)) % 75;
+    }
+    else if (moveLeftRight)
+    {
+        footAngle = (int)(10 * sin(lastFrameTime * 3)) % 75 + 20;
+    }
+
     // Olaf right foot
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafRightFootWorldMatrix = olafBaseWorldMatrix;
-    olafRightFootWorldMatrix = translate(olafRightFootWorldMatrix, vec3(-0.3f, -1.0f, 0.0f));
+    if (moveForwardAndBack)
+    {
+        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(1.0f, 0.0f, 0.0f));
+    }
+    else if (moveLeftRight)
+    {
+        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(0.0f, 0.0f, 1.0f));
+    }
+    olafRightFootWorldMatrix = translate(olafRightFootWorldMatrix, vec3(-0.3f, -footDistanceFromBase, 0.0f));
     olafRightFootWorldMatrix = scale(olafRightFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafRightFootWorldMatrix[0][0]);
@@ -3714,7 +3747,15 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafLeftFootWorldMatrix = olafBaseWorldMatrix;
-    olafLeftFootWorldMatrix = translate(olafLeftFootWorldMatrix, vec3(0.3f, -1.0f, 0.0f));
+    if (moveForwardAndBack)
+    {
+        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(1.0f, 0.0f, 0.0f));
+    }
+    else if (moveLeftRight)
+    {
+        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(0.0f, 0.0f, 1.0f));
+    }
+    olafLeftFootWorldMatrix = translate(olafLeftFootWorldMatrix, vec3(0.3f, -footDistanceFromBase, 0.0f));
     olafLeftFootWorldMatrix = scale(olafLeftFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafLeftFootWorldMatrix[0][0]);
