@@ -25,8 +25,7 @@ void processUserInput(GLFWwindow* window);
 void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
 void drawGround(int shaderProgram, GLuint worldMatrixLocation);
 void drawCoordinateAxis(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
-//void drawOlaf(GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime);
-//void drawOlaf(GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime, int textureShaderProgram);
+void drawCarrotNose(int shaderProgram, GLuint worldMatrixLocation);
 void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime);
 void updateViewAndProjection(int shaderProgram);
 
@@ -75,6 +74,7 @@ vec3 olafPosition(0.0f, -1.2f, 0.0f);
 vec3 olafLookAt(1.0f, 0.0f, 0.0f);
 vec3 olafUp(0.0f, 1.0f, 0.0f);
 vec3 olafSideVector = cross(olafLookAt, olafUp);
+mat4 olafNoseWorldMatrix;
 
 // Olaf other parameters
 float olafAngle = 90.0f;
@@ -3230,7 +3230,17 @@ int main(int argc, char* argv[])
         // Draw Olaf
         drawOlaf(shaderProgram, textureShaderProgram, lastFrameTime);
 
+        // Change to texture shader program
+        glUseProgram(textureShaderProgram);
+
+        // Load texture cube vao
+        glBindVertexArray(texturedCubeVAO);
+
+        // Draw carrot nose
+        drawCarrotNose(textureShaderProgram, textureWorldMatrixLocation);
+
         // Update view and projection matrices
+        glUseProgram(shaderProgram);
         updateViewAndProjection(shaderProgram);
 
         // Update texture shader program
@@ -3622,7 +3632,6 @@ void drawObject()
     }
 }
 
-//void drawOlaf(GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime, int textureShaderProgram)
 void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
 {
     // Get color uniform locaiton
@@ -3632,7 +3641,7 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
     
     // Set point size and line width for rendering Olaf as points or as wireframe
-    glPointSize(2.5);
+    glPointSize(2);
     glLineWidth(1);
 
     // Olaf base
@@ -3686,13 +3695,15 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
 
     outlineShape(colorLocation);
 
+    glPointSize(0.01);
+    glLineWidth(0.01);
+
     // Olaf right foot
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafRightFootWorldMatrix = olafBaseWorldMatrix;
     olafRightFootWorldMatrix = translate(olafRightFootWorldMatrix, vec3(-0.3f, -1.0f, 0.0f));
-    //olafRightFootWorldMatrix = scale(olafRightFootWorldMatrix, vec3(0.8f, 0.75f, 0.8f));
-    olafRightFootWorldMatrix = scale(olafRightFootWorldMatrix, vec3(0.2f, 0.2f, 0.2f));
+    olafRightFootWorldMatrix = scale(olafRightFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafRightFootWorldMatrix[0][0]);
     drawObject();
@@ -3704,13 +3715,15 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
 
     mat4 olafLeftFootWorldMatrix = olafBaseWorldMatrix;
     olafLeftFootWorldMatrix = translate(olafLeftFootWorldMatrix, vec3(0.3f, -1.0f, 0.0f));
-    //olafLeftFootWorldMatrix = scale(olafLeftFootWorldMatrix, vec3(0.8f, 0.75f, 0.8f));
-    olafLeftFootWorldMatrix = scale(olafLeftFootWorldMatrix, vec3(0.2f, 0.2f, 0.2f));
+    olafLeftFootWorldMatrix = scale(olafLeftFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafLeftFootWorldMatrix[0][0]);
     drawObject();
 
     outlineShape(colorLocation);
+
+    glPointSize(2);
+    glLineWidth(1);
 
     // Olaf torso
     glUniform3fv(colorLocation, 1, &white[0]);
@@ -3769,7 +3782,7 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     // Olaf nose
     glUniform3fv(colorLocation, 1, &orange[0]);
 
-    mat4 olafNoseWorldMatrix = olafTorsoWorldMatrix;
+    olafNoseWorldMatrix = olafTorsoWorldMatrix;
     olafNoseWorldMatrix = translate(olafNoseWorldMatrix, vec3(0.0f, 1.0f, 0.6f));
     olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(0.25f, 0.25f, 0.5f));                         // 4. Add nose scale
     olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 3.5f, 1.0f / 3.0f, 1.0f));             // 3. revert base scale
@@ -3777,33 +3790,7 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 0.8f, 1.0f, 1.0f / 0.8f));             // 1. revert head scale
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafNoseWorldMatrix[0][0]);
-    drawObject();
-
-    //// Olaf nose
-    //glUseProgram(textureShaderProgram);
-    //glBindVertexArray(texturedCubeVAO);
-
-    //GLuint textureWorldMatrixLocation = glGetUniformLocation(textureShaderProgram, "worldMatrix");
-
-    //glActiveTexture(GL_TEXTURE0);
-    //GLuint textureLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
-    //glBindTexture(GL_TEXTURE_2D, carrotTextureID);
-    //glUniform1i(textureLocation, 0);                // Set our Texture sampler to user Texture Unit 0
-
-    //mat4 textureNoseWorldMatrix = olafNoseWorldMatrix;
-    //textureNoseWorldMatrix = translate(textureNoseWorldMatrix, vec3(0.0f, 1.0f, 0.6f));
-    ////olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(0.25f, 0.25f, 0.5f));                         // 4. Add nose scale
-    ////olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 3.5f, 1.0f / 3.0f, 1.0f));             // 3. revert base scale
-    ////olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 0.75f, 1.0f / 0.5f, 1.0f / 0.75f));    // 2. revert torso scale
-    ////olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 0.8f, 1.0f, 1.0f / 0.8f));             // 1. revert head scale
-
-    //glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &textureNoseWorldMatrix[0][0]);
-    ////glDrawArrays(GL_TRIANGLES, 0, 36);
-    //glUniformMatrix4fv(textureWorldMatrixLocation, 1, GL_FALSE, &textureNoseWorldMatrix[0][0]);
-
-    //glUseProgram(shaderProgram);
-    //glBindVertexArray(sphereVAO);
-
+    //drawObject();
 
     // Olaf right eye
     glUniform3fv(colorLocation, 1, &black[0]);
@@ -3926,6 +3913,22 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
     drawObject();
 
     outlineShape(colorLocation);
+    
+}
+
+void drawCarrotNose(int textureShaderProgram, GLuint texturedWorldMatrixLocation)
+{
+    // Draw carrot
+    glActiveTexture(GL_TEXTURE1);
+    GLuint textureLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
+    glBindTexture(GL_TEXTURE_2D, carrotTextureID);
+    glUniform1i(textureLocation, 1);
+
+    mat4 carrotNoseWorldMatrix = olafNoseWorldMatrix;
+    carrotNoseWorldMatrix = translate(carrotNoseWorldMatrix, vec3(0.0f, 0.0f, 0.3f));
+    glUniformMatrix4fv(texturedWorldMatrixLocation, 1, GL_FALSE, &carrotNoseWorldMatrix[0][0]);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void updateViewAndProjection(int shaderProgram)
