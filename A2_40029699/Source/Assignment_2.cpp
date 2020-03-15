@@ -25,9 +25,84 @@ void processUserInput(GLFWwindow* window);
 void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
 void drawGround(int shaderProgram, GLuint worldMatrixLocation);
 void drawCoordinateAxis(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation);
+void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime);
 void drawCarrotNose(int shaderProgram, GLuint worldMatrixLocation);
-void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime);
 void updateViewAndProjection(int shaderProgram);
+void renderScene(int shaderProgram, GLuint modelMatrixLocation);
+void renderQuad();
+
+unsigned int testCubeVAO = 0;
+unsigned int testCubeVBO = 0;
+void renderCube()
+{
+    // initialize (if necessary)
+    if (testCubeVAO == 0)
+    {
+        float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            // right face
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+            // bottom face
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            // top face
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+             1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+             1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+        };
+        glGenVertexArrays(1, &testCubeVAO);
+        glGenBuffers(1, &testCubeVBO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, testCubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(testCubeVAO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    // render Cube
+    glBindVertexArray(testCubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
 
 // Screen sizes
 int SCREEN_WIDTH = 1024;
@@ -94,7 +169,8 @@ GLenum renderMode = GL_TRIANGLE_STRIP;
 int numTriangles = 1297;
 
 // Lighting position
-vec3 lightPos(5.0f, 8.0f, -2.5f);
+vec3 lightPos(-2.0f, 4.0f, -1.0f);
+bool isCalculatingShadows = false;
 
 // Colors
 vec3 backgroundColor(0.2f, 0.298f, 0.298f);
@@ -112,6 +188,7 @@ vec3 darkBlue(0.06f, 0.22f, 0.54f);
 // Textures
 GLuint snowTextureID;
 GLuint carrotTextureID;
+GLuint brickTextureID;
 
 // VAOs
 int lineVAO;
@@ -120,6 +197,8 @@ int sphereVAO;
 int testVAO;
 int lampVAO;
 int texturedCubeVAO;
+unsigned int planeVAO;
+
 
 string loadShaderFile(const char* shaderPath)
 {
@@ -3079,6 +3158,12 @@ void setWorldMatrix(int shaderProgram, mat4 worldMatrix)
     GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &worldMatrix[0][0]);
 }
+void setLightSpaceMatrix(int shaderProgram, mat4 lightSpaceMatrix)
+{
+    glUseProgram(shaderProgram);
+    GLuint lightSpaceMatrixLocation = glGetUniformLocation(shaderProgram, "lightSpaceMatrix");
+    glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+}
 
 int main(int argc, char* argv[])
 {
@@ -3126,6 +3211,7 @@ int main(int argc, char* argv[])
     // Load textures
     snowTextureID = loadTexture("../Assets/Textures/snow.jpg");
     carrotTextureID = loadTexture("../Assets/Textures/carrot.jpg");
+    brickTextureID = loadTexture("../Assets/Textures/brick.jpg");
 
     // Compile and link shaders
     string vertexCode = loadShaderFile("../Assets/Shaders/shader.vs");
@@ -3140,8 +3226,51 @@ int main(int argc, char* argv[])
     string textureFragmentCode = loadShaderFile("../Assets/Shaders/textureShader.fs");
     int textureShaderProgram = compileAndLinkShaders(textureVertexCode.c_str(), textureFragmentCode.c_str());
 
+    string depthDebugVertexCode = loadShaderFile("../Assets/Shaders/debugDepthShader.vs");
+    string depthDebugFragmentCode = loadShaderFile("../Assets/Shaders/debugDepthShader.fs");
+    int debugDepthShaderProgram = compileAndLinkShaders(depthDebugVertexCode.c_str(), depthDebugFragmentCode.c_str());
+
+    string depthVertexCode = loadShaderFile("../Assets/Shaders/depthShader.vs");
+    string depthFragmentCode = loadShaderFile("../Assets/Shaders/depthShader.fs");
+    int depthShaderProgram = compileAndLinkShaders(depthVertexCode.c_str(), depthFragmentCode.c_str());
+
+    string testVertexCode = loadShaderFile("../Assets/Shaders/testShader.vs");
+    string testFragmentCode = loadShaderFile("../Assets/Shaders/testShader.fs");
+    int testShaderProgram = compileAndLinkShaders(testVertexCode.c_str(), testFragmentCode.c_str());
+
+    // Configure depth map FBO
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    unsigned int depthMapFBO;
+    glGenFramebuffers(1, &depthMapFBO);
+    // create depth texture
+    unsigned int depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+    glUseProgram(textureShaderProgram);
+    GLuint textureSamplerLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
+    glUniform1i(textureSamplerLocation, 0);
+    GLuint shadowMapLocation = glGetUniformLocation(textureShaderProgram, "shadowMap");
+    glUniform1i(textureShaderProgram, 1);
+
+    glUseProgram(debugDepthShaderProgram);
+    GLuint depthMapLocation = glGetUniformLocation(debugDepthShaderProgram, "depthMap");
+    glUniform1i(debugDepthShaderProgram, 0);
+
     // Set projection matrix
-    mat4 projectionMatrix = glm::perspective(camera_fov,                           // field of view in degrees
+    mat4 projectionMatrix = perspective(camera_fov,                           // field of view in degrees
                                              (float)SCREEN_WIDTH / SCREEN_HEIGHT,  // aspect ratio
                                              0.01f, 100.0f);                       // near and far (near > 0)
 
@@ -3179,12 +3308,37 @@ int main(int argc, char* argv[])
     GLuint textureWorldMatrixLocation = glGetUniformLocation(textureShaderProgram, "worldMatrix");
 
     // Define and upload geometry to the GPU here
-    int lineVAO = createLineSegmentVertexArrayObject();
-    int cubeVAO = createCubeVertexArrayObject();
-    int sphereVAO = createSphereVertexArrayObject();
-    int testVAO = createTestVAO();
-    int lampVAO = createCubeVertexArrayObject();
-    int texturedCubeVAO = createTexturedCubeVertexArrayObject();
+    lineVAO = createLineSegmentVertexArrayObject();
+    cubeVAO = createCubeVertexArrayObject();
+    sphereVAO = createSphereVertexArrayObject();
+    testVAO = createTestVAO();
+    lampVAO = createCubeVertexArrayObject();
+    texturedCubeVAO = createTexturedCubeVertexArrayObject();
+
+    float planeVertices[] = {
+        // positions            // normals         // texcoords
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+
+         25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
+        -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
+         25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 10.0f
+    };
+    // plane VAO
+    unsigned int planeVBO;
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glBindVertexArray(0);
 
     // For frame time
     float lastFrameTime = glfwGetTime();
@@ -3197,7 +3351,6 @@ int main(int argc, char* argv[])
     // Enable Depth Test
     glEnable(GL_DEPTH_TEST);
 
-
     // Entering Main Loop
     while (!glfwWindowShouldClose(window))
     {
@@ -3205,8 +3358,151 @@ int main(int argc, char* argv[])
         dt = glfwGetTime() - lastFrameTime;
         lastFrameTime += dt;
 
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // 1. render depth of scene to texture (from light's perspective)
+        // --------------------------------------------------------------
+        mat4 lightProjection, lightView;
+        mat4 lightSpaceMatrix;
+        float near_plane = 1.0f, far_plane = 7.5f;
+        lightProjection = ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        lightView = lookAt(lightPos, vec3(0.0f), vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = lightProjection * lightView;
+
+        // render scene from light's point of view
+        glUseProgram(depthShaderProgram);
+        setLightSpaceMatrix(depthShaderProgram, lightSpaceMatrix);
+
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glActiveTexture(GL_TEXTURE0);
+
+        GLuint modelMatrixLocation = glGetUniformLocation(depthShaderProgram, "model");
+        renderScene(depthShaderProgram, modelMatrixLocation);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+        //glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //// render Depth map to quad for visual debugging
+        //// ---------------------------------------------
+        //glUseProgram(debugDepthShaderProgram);
+
+        //GLuint near_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "near_plane");
+        //GLuint far_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "far_plane");
+        //glUniform1f(near_planeLocation, near_plane);
+        //glUniform1f(far_planeLocation, far_plane);
+
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, depthMap);
+        //renderQuad();
+
+
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(testShaderProgram);
+
+        GLuint testProjectionMatrixLocation = glGetUniformLocation(testShaderProgram, "projection");
+        glUniformMatrix4fv(testProjectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+
+        GLuint testViewMatrixLocation = glGetUniformLocation(testShaderProgram, "view");
+        glUniformMatrix4fv(testViewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+
+        GLuint testLightSpacerMatrixLocation = glGetUniformLocation(testShaderProgram, "lightSpaceMatrix");
+        glUniformMatrix4fv(testLightSpacerMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickTextureID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+
+        GLuint testWorldModelMatrixLocation = glGetUniformLocation(testShaderProgram, "model");
+        renderScene(testShaderProgram, testWorldModelMatrixLocation);
+
+        // Testing moving light 
+        //lightPos = vec3(0.0f, 0.0f, 15 * sin(glfwGetTime()));
+
+
+        /*
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        float near_plane = 1.0f, far_plane = 7.5f;
+        mat4 lightProjection = ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        mat4 lightView = lookAt(lightPos,
+                                vec3(0.0f, 0.0f, 0.0f),
+                                vec3(0.0f, 1.0f, 0.0f));
+        mat4 lightSpaceMatrix = lightProjection * lightView;
+        
+        glUseProgram(depthShaderProgram);
+        setLightSpaceMatrix(depthShaderProgram, lightSpaceMatrix);
+
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        isCalculatingShadows = true;
+        GLuint modelMatrixLocation = glGetUniformLocation(depthShaderProgram, "model");
+
+
+        // Load texture cube vao
+        glBindVertexArray(texturedCubeVAO);
+
+        // Draw snow ground
+        drawGround(textureShaderProgram, modelMatrixLocation);
+
+        // Load line vao
+        glBindVertexArray(lineVAO);
+
+        // Draw Grid
+        drawGrid(shaderProgram, modelMatrixLocation, colorLocation);
+
+        // Draw coordinate axis lines
+        drawCoordinateAxis(shaderProgram, modelMatrixLocation, colorLocation);
+
+        // Load sphere vao
+        glBindVertexArray(sphereVAO);
+
+        // Get color uniform locaiton
+        //GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
+
+        // Get world uniform locaiton
+        //GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+
+        // Draw Olaf
+        drawOlaf(shaderProgram, modelMatrixLocation, colorLocation, lastFrameTime);
+
+        // Load texture cube vao
+        glBindVertexArray(texturedCubeVAO);
+
+        // Draw carrot nose
+        drawCarrotNose(textureShaderProgram, modelMatrixLocation);
+
+        //// Update view and projection matrices
+        //glUseProgram(shaderProgram);
+        //updateViewAndProjection(shaderProgram);
+
+        //// Update texture shader program
+        //glUseProgram(textureShaderProgram);
+        //updateViewAndProjection(textureShaderProgram);
+
+        //// Use lighting shader program
+        //glUseProgram(lightingShaderProgram);
+        //updateViewAndProjection(lightingShaderProgram);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+        // ========================== SECOND PASS =====================================
+
+        isCalculatingShadows = false;
+
         // Clear Color Buffer Bit and Depth Buffer Bit 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
         // Use texture shader program
         glUseProgram(textureShaderProgram);
@@ -3232,8 +3528,14 @@ int main(int argc, char* argv[])
         // Load sphere vao
         glBindVertexArray(sphereVAO);
 
+        // Get color uniform locaiton
+        //GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
+
+        // Get world uniform locaiton
+        //GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
+
         // Draw Olaf
-        drawOlaf(shaderProgram, textureShaderProgram, lastFrameTime);
+        drawOlaf(shaderProgram, worldMatrixLocation, colorLocation, lastFrameTime);
 
         // Change to texture shader program
         glUseProgram(textureShaderProgram);
@@ -3271,6 +3573,25 @@ int main(int argc, char* argv[])
         glBindVertexArray(lampVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        */
+
+        /*
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glUseProgram(shaderProgram);
+
+        // Load line vao
+        glBindVertexArray(lineVAO);
+
+        // Draw Grid
+        //drawGrid(shaderProgram, worldMatrixLocation, colorLocation);
+
+        // Draw coordinate axis lines
+        //drawCoordinateAxis(shaderProgram, worldMatrixLocation, colorLocation);
+
+        renderScene(shaderProgram, worldMatrixLocation);
+        updateViewAndProjection(shaderProgram);
+        */
+
         // End Frame
         glfwSwapBuffers(window);
 
@@ -3286,6 +3607,70 @@ int main(int argc, char* argv[])
     glfwTerminate();
 
     return 0;
+}
+
+void renderScene(int shaderProgram, GLuint modelMatrixLocation)
+{
+    // floor
+    mat4 model = mat4(1.0f);
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+    glBindVertexArray(planeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // cubes
+    model = mat4(1.0f);
+    model = translate(model, vec3(0.0f, 1.5f, 0.0));
+    model = scale(model, vec3(1.0f));
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+    glBindVertexArray(texturedCubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    model = mat4(1.0f);
+    model = translate(model, vec3(2.0f, 0.0f, 1.0));
+    model = scale(model, vec3(1.5f));
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+    glBindVertexArray(texturedCubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+    model = mat4(1.0f);
+    model = translate(model, vec3(-1.0f, 0.0f, 2.0));
+    model = rotate(model, radians(60.0f), normalize(vec3(1.0, 0.0, 1.0)));
+    model = scale(model, vec3(1.25));
+    glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+    glBindVertexArray(texturedCubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
 
 float getRandomFloat(float start, float end) {
@@ -3583,12 +3968,15 @@ void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
 
 void drawGround(int shaderProgram, GLuint worldMatrixLocation)
 {
-    // Draw snow ground
-    glActiveTexture(GL_TEXTURE0);
-    GLuint textureLocation = glGetUniformLocation(shaderProgram, "textureSampler");
-    glBindTexture(GL_TEXTURE_2D, snowTextureID);
-    glUniform1i(textureLocation, 0);                // Set our Texture sampler to user Texture Unit 0
+    if (!isCalculatingShadows)
+    {
+        // Draw snow ground
+        glActiveTexture(GL_TEXTURE0);
+        GLuint textureLocation = glGetUniformLocation(shaderProgram, "textureSampler");
+        glBindTexture(GL_TEXTURE_2D, snowTextureID);
+        glUniform1i(textureLocation, 0);                // Set our Texture sampler to user Texture Unit 0
 
+    }
     mat4 groundWorldMatrix = translate(mat4(1.0f), vec3(0.0f, -0.01f, 0.0f)) * scale(mat4(1.0f), vec3(sizeOfGrid, 0.02f, sizeOfGrid));
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &groundWorldMatrix[0][0]);
 
@@ -3645,14 +4033,8 @@ void drawObject()
     }
 }
 
-void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
-{
-    // Get color uniform locaiton
-    GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
-
-    // Get world uniform locaiton
-    GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
-    
+void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation, float lastFrameTime)
+{    
     // Set point size and line width for rendering Olaf as points or as wireframe
     glPointSize(2);
     glLineWidth(1);
@@ -3989,10 +4371,13 @@ void drawOlaf(int shaderProgram, int textureShaderProgram, float lastFrameTime)
 void drawCarrotNose(int textureShaderProgram, GLuint texturedWorldMatrixLocation)
 {
     // Draw carrot
-    glActiveTexture(GL_TEXTURE1);
-    GLuint textureLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
-    glBindTexture(GL_TEXTURE_2D, carrotTextureID);
-    glUniform1i(textureLocation, 1);
+    if (!isCalculatingShadows)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        GLuint textureLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
+        glBindTexture(GL_TEXTURE_2D, carrotTextureID);
+        glUniform1i(textureLocation, 1);
+    }
 
     mat4 carrotNoseWorldMatrix = olafNoseWorldMatrix;
     carrotNoseWorldMatrix = translate(carrotNoseWorldMatrix, vec3(0.0f, 0.0f, 0.3f));
