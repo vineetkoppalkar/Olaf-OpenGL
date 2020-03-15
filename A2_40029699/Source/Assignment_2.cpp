@@ -87,6 +87,7 @@ float olafSpeed = 5.0f;
 float olafScale = 0.6f;
 float olafRotationAmount = 5.0f;
 float olafScaleAmount = 0.05f;
+float olafTurnAmount = 10.0f;
 
 // Rendering parameters
 bool drawWithReversedFaceCulling = true;
@@ -3391,6 +3392,38 @@ void processUserInput(GLFWwindow* window)
     isHoldingShift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
     moveForwardAndBack = false;
     moveLeftRight = false;
+
+    if (isHoldingShift)
+    {
+        if (glfwGetKey(window, GLFW_KEY_W) && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        {
+            olafAngle += olafTurnAmount;
+            olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
+            olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_W) && glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        {
+            olafAngle -= olafTurnAmount;
+            olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
+            olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_S) && glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        {
+            olafAngle += 5.0f;
+            olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
+            olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_S) && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        {
+            olafAngle -= 5.0f;
+            olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
+            olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
+            moveForwardAndBack = true;
+        }
+    }
 
     // Move olaf forward
     if (isHoldingShift && glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
