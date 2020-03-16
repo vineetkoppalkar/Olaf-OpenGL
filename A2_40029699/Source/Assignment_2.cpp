@@ -35,6 +35,7 @@ unsigned int testCubeVAO = 0;
 unsigned int testCubeVBO = 0;
 void renderCube()
 {
+
     // initialize (if necessary)
     if (testCubeVAO == 0)
     {
@@ -98,6 +99,7 @@ void renderCube()
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
+
     // render Cube
     glBindVertexArray(testCubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -3249,8 +3251,10 @@ int main(int argc, char* argv[])
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     // attach depth texture as FBO's depth buffer
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -3259,11 +3263,11 @@ int main(int argc, char* argv[])
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
-    glUseProgram(textureShaderProgram);
-    GLuint textureSamplerLocation = glGetUniformLocation(textureShaderProgram, "textureSampler");
+    glUseProgram(testShaderProgram);
+    GLuint textureSamplerLocation = glGetUniformLocation(testShaderProgram, "diffuseTexture");
     glUniform1i(textureSamplerLocation, 0);
-    GLuint shadowMapLocation = glGetUniformLocation(textureShaderProgram, "shadowMap");
-    glUniform1i(textureShaderProgram, 1);
+    GLuint shadowMapLocation = glGetUniformLocation(testShaderProgram, "shadowMap");
+    glUniform1i(shadowMapLocation, 1);
 
     glUseProgram(debugDepthShaderProgram);
     GLuint depthMapLocation = glGetUniformLocation(debugDepthShaderProgram, "depthMap");
@@ -3351,6 +3355,7 @@ int main(int argc, char* argv[])
     // Enable Depth Test
     glEnable(GL_DEPTH_TEST);
 
+
     // Entering Main Loop
     while (!glfwWindowShouldClose(window))
     {
@@ -3416,11 +3421,12 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(testLightSpacerMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, brickTextureID);
+        glBindTexture(GL_TEXTURE_2D, snowTextureID);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
 
         GLuint testWorldModelMatrixLocation = glGetUniformLocation(testShaderProgram, "model");
+
         renderScene(testShaderProgram, testWorldModelMatrixLocation);
 
         // Testing moving light 
@@ -3592,6 +3598,7 @@ int main(int argc, char* argv[])
         updateViewAndProjection(shaderProgram);
         */
 
+
         // End Frame
         glfwSwapBuffers(window);
 
@@ -3611,43 +3618,55 @@ int main(int argc, char* argv[])
 
 void renderScene(int shaderProgram, GLuint modelMatrixLocation)
 {
+    glCullFace(GL_FRONT);
+
     // floor
     mat4 model = mat4(1.0f);
+    model = translate(model, vec3(0.0f, -1.0f, 0.0));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
     glBindVertexArray(planeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    glCullFace(GL_BACK);
+
     // cubes
     model = mat4(1.0f);
-    model = translate(model, vec3(0.0f, 1.5f, 0.0));
+    model = translate(model, vec3(0.0f, 2.5f, 0.0));
     model = scale(model, vec3(1.0f));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-    glBindVertexArray(texturedCubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
+    //glBindVertexArray(texturedCubeVAO);
+    //glDrawArrays(GL_TRIANGLES, 0, 36);
+    //glBindVertexArray(0);
+    renderCube();
+
 
     model = mat4(1.0f);
-    model = translate(model, vec3(2.0f, 0.0f, 1.0));
-    model = scale(model, vec3(1.5f));
+    model = translate(model, vec3(4.0f, 0.0f, 1.0));
+    model = scale(model, vec3(1.0f));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-    glBindVertexArray(texturedCubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
+    //glBindVertexArray(texturedCubeVAO);
+    //glDrawArrays(GL_TRIANGLES, 0, 36);
+    //glBindVertexArray(0);
+    renderCube();
+
 
     model = mat4(1.0f);
-    model = translate(model, vec3(-1.0f, 0.0f, 2.0));
+    model = translate(model, vec3(-2.0f, 0.0f, 2.0));
     model = rotate(model, radians(60.0f), normalize(vec3(1.0, 0.0, 1.0)));
-    model = scale(model, vec3(1.25));
+    model = scale(model, vec3(1.0));
     glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-    glBindVertexArray(texturedCubeVAO);
+ /*   glBindVertexArray(texturedCubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
+    glBindVertexArray(0);*/
+    renderCube();
+
 }
 
 unsigned int quadVAO = 0;
 unsigned int quadVBO;
 void renderQuad()
 {
+
     if (quadVAO == 0)
     {
         float quadVertices[] = {
