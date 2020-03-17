@@ -171,7 +171,8 @@ GLenum renderMode = GL_TRIANGLE_STRIP;
 int numTriangles = 1297;
 
 // Lighting position
-vec3 lightPos(-2.0f, 4.0f, -1.0f);
+//vec3 lightPos(-1.0f, 5.0f, 0.0f);
+vec3 lightPos(8.0f, 10.0f, 0.0f);
 bool isCalculatingShadows = false;
 
 // Colors
@@ -3263,15 +3264,26 @@ int main(int argc, char* argv[])
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
+
+    glUseProgram(textureShaderProgram);
+    GLuint diffuseSamplerLocation = glGetUniformLocation(textureShaderProgram, "diffuseTexture");
+    glUniform1i(diffuseSamplerLocation, 0);
+    GLuint shadowMapLocation = glGetUniformLocation(textureShaderProgram, "shadowMap");
+    glUniform1i(shadowMapLocation, 1);
+    GLuint textureLightPositionLocation = glGetUniformLocation(textureShaderProgram, "lightPos");
+    glUniform3fv(textureLightPositionLocation, 1, &lightPos[0]);
+
     glUseProgram(testShaderProgram);
-    GLuint textureSamplerLocation = glGetUniformLocation(testShaderProgram, "diffuseTexture");
-    glUniform1i(textureSamplerLocation, 0);
-    GLuint shadowMapLocation = glGetUniformLocation(testShaderProgram, "shadowMap");
+    diffuseSamplerLocation = glGetUniformLocation(testShaderProgram, "diffuseTexture");
+    glUniform1i(diffuseSamplerLocation, 0);
+    shadowMapLocation = glGetUniformLocation(testShaderProgram, "shadowMap");
     glUniform1i(shadowMapLocation, 1);
 
     glUseProgram(debugDepthShaderProgram);
     GLuint depthMapLocation = glGetUniformLocation(debugDepthShaderProgram, "depthMap");
     glUniform1i(debugDepthShaderProgram, 0);
+
+
 
     // Set projection matrix
     mat4 projectionMatrix = perspective(camera_fov,                           // field of view in degrees
@@ -3318,6 +3330,7 @@ int main(int argc, char* argv[])
     testVAO = createTestVAO();
     lampVAO = createCubeVertexArrayObject();
     texturedCubeVAO = createTexturedCubeVertexArrayObject();
+    renderCube();
 
     float planeVertices[] = {
         // positions            // normals         // texcoords
@@ -3363,6 +3376,8 @@ int main(int argc, char* argv[])
         dt = glfwGetTime() - lastFrameTime;
         lastFrameTime += dt;
 
+
+        /*
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -3428,46 +3443,55 @@ int main(int argc, char* argv[])
         GLuint testWorldModelMatrixLocation = glGetUniformLocation(testShaderProgram, "model");
 
         renderScene(testShaderProgram, testWorldModelMatrixLocation);
+        */
 
         // Testing moving light 
         //lightPos = vec3(0.0f, 0.0f, 15 * sin(glfwGetTime()));
 
-
-        /*
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        float near_plane = 1.0f, far_plane = 7.5f;
-        mat4 lightProjection = ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-        mat4 lightView = lookAt(lightPos,
-                                vec3(0.0f, 0.0f, 0.0f),
-                                vec3(0.0f, 1.0f, 0.0f));
-        mat4 lightSpaceMatrix = lightProjection * lightView;
-        
+        // 1. render depth of scene to texture (from light's perspective)
+        // --------------------------------------------------------------
+        mat4 lightProjection, lightView;
+        mat4 lightSpaceMatrix;
+        float near_plane = 1.0f, far_plane = 70.5f;
+        lightProjection = ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        lightView = lookAt(lightPos, vec3(0.0f), vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = lightProjection * lightView;
+
+        // render scene from light's point of view
         glUseProgram(depthShaderProgram);
         setLightSpaceMatrix(depthShaderProgram, lightSpaceMatrix);
 
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
+        glActiveTexture(GL_TEXTURE0);
+
+        //GLuint modelMatrixLocation = glGetUniformLocation(depthShaderProgram, "model");
+        //renderScene(depthShaderProgram, modelMatrixLocation);
+
 
         isCalculatingShadows = true;
         GLuint modelMatrixLocation = glGetUniformLocation(depthShaderProgram, "model");
 
-
         // Load texture cube vao
-        glBindVertexArray(texturedCubeVAO);
+        //glBindVertexArray(texturedCubeVAO);
 
         // Draw snow ground
-        drawGround(textureShaderProgram, modelMatrixLocation);
+       // drawGround(depthShaderProgram, modelMatrixLocation);
 
-        // Load line vao
-        glBindVertexArray(lineVAO);
+        glCullFace(GL_FRONT);
 
-        // Draw Grid
-        drawGrid(shaderProgram, modelMatrixLocation, colorLocation);
+        // floor
+        mat4 model = mat4(1.0f);
+        model = translate(model, vec3(0.0f, 0.0f, 0.0));
+        glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+        glBindVertexArray(planeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw coordinate axis lines
-        drawCoordinateAxis(shaderProgram, modelMatrixLocation, colorLocation);
+        glCullFace(GL_BACK);
 
         // Load sphere vao
         glBindVertexArray(sphereVAO);
@@ -3479,13 +3503,13 @@ int main(int argc, char* argv[])
         //GLuint worldMatrixLocation = glGetUniformLocation(shaderProgram, "worldMatrix");
 
         // Draw Olaf
-        drawOlaf(shaderProgram, modelMatrixLocation, colorLocation, lastFrameTime);
+        drawOlaf(depthShaderProgram, modelMatrixLocation, colorLocation, lastFrameTime);
 
         // Load texture cube vao
         glBindVertexArray(texturedCubeVAO);
 
         // Draw carrot nose
-        drawCarrotNose(textureShaderProgram, modelMatrixLocation);
+        drawCarrotNose(depthShaderProgram, modelMatrixLocation);
 
         //// Update view and projection matrices
         //glUseProgram(shaderProgram);
@@ -3501,23 +3525,87 @@ int main(int argc, char* argv[])
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
         // ========================== SECOND PASS =====================================
 
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // render Depth map to quad for visual debugging
+        // ---------------------------------------------
+        /*glUseProgram(debugDepthShaderProgram);
+
+        GLuint near_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "near_plane");
+        GLuint far_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "far_plane");
+        glUniform1f(near_planeLocation, near_plane);
+        glUniform1f(far_planeLocation, far_plane);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        renderQuad();*/
+
+        
         isCalculatingShadows = false;
 
         // Clear Color Buffer Bit and Depth Buffer Bit 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
+
         // Use texture shader program
         glUseProgram(textureShaderProgram);
 
+        
+        GLuint testProjectionMatrixLocation = glGetUniformLocation(textureShaderProgram, "projectionMatrix");
+        glUniformMatrix4fv(testProjectionMatrixLocation, 1, GL_FALSE, &projectionMatrix[0][0]);
+
+        GLuint testViewMatrixLocation = glGetUniformLocation(textureShaderProgram, "viewMatrix");
+        glUniformMatrix4fv(testViewMatrixLocation, 1, GL_FALSE, &viewMatrix[0][0]);
+
+        GLuint testLightSpacerMatrixLocation = glGetUniformLocation(textureShaderProgram, "lightSpaceMatrix");
+        glUniformMatrix4fv(testLightSpacerMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, carrotTextureID);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+
+        glCullFace(GL_FRONT);
+
+        // floor
+        model = mat4(1.0f);
+        model = translate(model, vec3(0.0f, 0.0f, 0.0));
+        GLuint testModelLocation = glGetUniformLocation(textureShaderProgram, "worldMatrix");
+        glUniformMatrix4fv(testModelLocation, 1, GL_FALSE, &model[0][0]);
+        glBindVertexArray(planeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glCullFace(GL_BACK);
+
+
+
+        // floor
+        //model = mat4(1.0f);
+        //model = translate(model, vec3(0.0f, 0.0f, 0.0));
+        ////model = scale(model, vec3(50.0f, 0.5f, 50.0));
+
+        //GLuint testModelLocation = glGetUniformLocation(textureShaderProgram, "worldMatrix");
+        //glUniformMatrix4fv(testModelLocation, 1, GL_FALSE, &model[0][0]);
+
+        //glCullFace(GL_FRONT);
+
+        //glBindVertexArray(planeVAO);
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        //glCullFace(GL_BACK);
+
+        
+
+
         // Load texture cube vao
-        glBindVertexArray(texturedCubeVAO);
+        //glBindVertexArray(testCubeVAO);
 
         // Draw snow ground
-        drawGround(textureShaderProgram, textureWorldMatrixLocation);
+        //drawGround(testShaderProgram, textureWorldMatrixLocation);
 
         // Use Assignment 1 shader program
         glUseProgram(shaderProgram);
@@ -3578,8 +3666,6 @@ int main(int argc, char* argv[])
 
         glBindVertexArray(lampVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        */
 
         /*
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
