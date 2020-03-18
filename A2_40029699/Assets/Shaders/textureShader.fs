@@ -41,12 +41,10 @@ void main()
 {
    vec3 textureColor = texture( diffuseTexture, TexCoords ).rgb;
 
-   vec3 ambient = 0.3 * textureColor;
+   vec3 ambient = 0.1 * textureColor;
    float shadowAmount = getShadowAmount(FragPosLightSpace);
    vec3 lighting = (ambient + (1.0f - shadowAmount)) * textureColor;
 
    FragColor = vec4(lighting, 1.0);
 
-
-   //FragColor = (ambient + (1.0f - shadowAmount)) *  vec4(vec3(textureColor), 1.0);
 }
