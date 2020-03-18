@@ -3242,24 +3242,6 @@ int main(int argc, char* argv[])
 
         // ========================== SECOND PASS =====================================
 
-        // render Depth map to quad for visual debugging
-        // ---------------------------------------------
-        /*
-        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glUseProgram(debugDepthShaderProgram);
-
-        GLuint near_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "near_plane");
-        GLuint far_planeLocation = glGetUniformLocation(debugDepthShaderProgram, "far_plane");
-        glUniform1f(near_planeLocation, near_plane);
-        glUniform1f(far_planeLocation, far_plane);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, depthMap);
-        renderQuad();*/
-        
-
         // Clear Color Buffer Bit and Depth Buffer Bit 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -3343,7 +3325,6 @@ int main(int argc, char* argv[])
 
         // Handle inputs
         processUserInput(window);
-
     }
 
     // Shutdown GLFW
