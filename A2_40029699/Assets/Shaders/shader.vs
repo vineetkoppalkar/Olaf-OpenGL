@@ -10,7 +10,6 @@ uniform mat4 projectionMatrix = mat4(1.0);
 out vec3 Normal;
 out vec3 FragPos;
 
-
 void main()
 {
    mat4 modelViewProjection = projectionMatrix * viewMatrix * worldMatrix;

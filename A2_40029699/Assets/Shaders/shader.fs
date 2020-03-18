@@ -3,7 +3,6 @@
 in vec3 Normal;
 in vec3 FragPos;
 
-
 uniform vec3 viewPos;
 uniform vec3 color = vec3(1.0f, 1.0f, 1.0f);
 uniform vec3 lightPos;
