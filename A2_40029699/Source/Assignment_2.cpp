@@ -96,6 +96,7 @@ int numTriangles = 1297;
 vec3 lightPos(10.0f, 10.0f, 0.0f);
 
 // Shadow parameters
+bool calculateShadows = true;
 const unsigned int SHADOW_WIDTH = 4096;
 const unsigned int SHADOW_HEIGHT = 4096;
 
@@ -3027,6 +3028,13 @@ void setLightSpaceMatrix(int shaderProgram, mat4 lightSpaceMatrix)
     GLuint lightSpaceMatrixLocation = glGetUniformLocation(shaderProgram, "lightSpaceMatrix");
     glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 }
+void setCalculateShadows(int shaderProgram, bool value)
+{
+
+    glUseProgram(shaderProgram);
+    GLuint calculateShadowsLocation = glGetUniformLocation(shaderProgram, "calculateShadows");
+    glUniform1i(calculateShadowsLocation, (int)value);
+}
 
 int main(int argc, char* argv[])
 {
@@ -3249,6 +3257,7 @@ int main(int argc, char* argv[])
 
         // Use texture shader program
         glUseProgram(textureShaderProgram);
+        setCalculateShadows(textureShaderProgram, calculateShadows);
 
         // Load textured cube vao
         glBindVertexArray(texturedCubeVAO);
@@ -3424,6 +3433,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         glEnable(GL_CULL_FACE);
     }
 
+    // Toggle shadows
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+    {
+        calculateShadows = !calculateShadows;
+    }
 }
 
 void processUserInput(GLFWwindow* window)
@@ -3538,7 +3552,7 @@ void processUserInput(GLFWwindow* window)
     isRightMouseBtnHeld = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
     // Check if middle mouse btn is held
-    isMiddleMouseBtnHeld = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS;
+    isMiddleMouseBtnHeld = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS;
 
     // Allow panning if right mouse btn is held
     if (isRightMouseBtnHeld)

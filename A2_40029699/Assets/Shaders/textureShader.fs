@@ -8,6 +8,7 @@ in vec4 FragPosLightSpace;
 uniform sampler2D diffuseTexture;
 uniform sampler2D shadowMap;
 uniform vec3 lightPos;
+uniform int calculateShadows = 1;
 
 out vec4 FragColor;
 
@@ -58,7 +59,13 @@ void main()
    vec3 textureColor = texture( diffuseTexture, TexCoords ).rgb;
 
    vec3 ambient = 0.1 * textureColor;
-   float shadowAmount = getShadowAmount(FragPosLightSpace);
+
+   float shadowAmount = 0.0;
+   if (calculateShadows == 1)
+   {
+       shadowAmount = getShadowAmount(FragPosLightSpace);
+   }
+
    vec3 lighting = (ambient + (1.0f - shadowAmount)) * textureColor;
 
    FragColor = vec4(lighting, 1.0);
