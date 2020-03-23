@@ -114,6 +114,7 @@ const vec3 brown(0.5f, 0.38f, 0.38f);
 const vec3 darkBlue(0.06f, 0.22f, 0.54f);
 
 // Textures
+bool showTexture = true;
 GLuint snowTextureID;
 GLuint carrotTextureID;
 GLuint brickTextureID;
@@ -3030,10 +3031,21 @@ void setLightSpaceMatrix(int shaderProgram, mat4 lightSpaceMatrix)
 }
 void setCalculateShadows(int shaderProgram, bool value)
 {
-
     glUseProgram(shaderProgram);
     GLuint calculateShadowsLocation = glGetUniformLocation(shaderProgram, "calculateShadows");
     glUniform1i(calculateShadowsLocation, (int)value);
+}
+void setShowTexture(int shaderProgram, bool value)
+{
+    glUseProgram(shaderProgram);
+    GLuint calculateShadowsLocation = glGetUniformLocation(shaderProgram, "showTexture");
+    glUniform1i(calculateShadowsLocation, (int)value);
+}
+void setColor(int shaderProgram, vec3 color)
+{
+    glUseProgram(shaderProgram);
+    GLuint colorLocation = glGetUniformLocation(shaderProgram, "color");
+    glUniform3fv(colorLocation, 1, &color[0]);
 }
 
 int main(int argc, char* argv[])
@@ -3258,6 +3270,12 @@ int main(int argc, char* argv[])
         // Use texture shader program
         glUseProgram(textureShaderProgram);
         setCalculateShadows(textureShaderProgram, calculateShadows);
+        setShowTexture(textureShaderProgram, showTexture);
+
+        if (!showTexture)
+        {
+            setColor(textureShaderProgram, white);
+        }
 
         // Load textured cube vao
         glBindVertexArray(texturedCubeVAO);
@@ -3437,6 +3455,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
     {
         calculateShadows = !calculateShadows;
+    }
+
+    // Toggle textures
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+    {
+        showTexture = !showTexture;
     }
 }
 
@@ -4011,6 +4035,11 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
 
 void drawCarrotNose(int textureShaderProgram, GLuint texturedWorldMatrixLocation)
 {
+    setShowTexture(textureShaderProgram, showTexture);
+    if (!showTexture)
+    {
+        setColor(textureShaderProgram, orange);
+    }
 
     glActiveTexture(GL_TEXTURE0);
     GLuint textureLocation = glGetUniformLocation(textureShaderProgram, "diffuseTexture");
