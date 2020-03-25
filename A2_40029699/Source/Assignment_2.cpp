@@ -85,7 +85,7 @@ float olafSpeed = 5.0f;
 float olafScale = 0.6f;
 float olafRotationAmount = 5.0f;
 float olafScaleAmount = 0.05f;
-float olafTurnAmount = 10.0f;
+float olafTurnAmount = 2.5f;
 
 // Rendering parameters
 bool drawWithReversedFaceCulling = true;
@@ -112,6 +112,7 @@ const vec3 black(0.01f, 0.01f, 0.01f);
 const vec3 orange(1.0f, 0.5f, 0.31f);
 const vec3 brown(0.5f, 0.38f, 0.38f);
 const vec3 darkBlue(0.06f, 0.22f, 0.54f);
+const vec3 darkGray(0.3f, 0.3f, 0.3f);
 
 // Textures
 bool showTexture = true;
@@ -3361,7 +3362,6 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-
 float getRandomFloat(float start, float end) {
     // The following code to generate a random float within a range was obtained from: https://stackoverflow.com/a/5289624
     float random = ((float)rand()) / (float)RAND_MAX;
@@ -3495,14 +3495,14 @@ void processUserInput(GLFWwindow* window)
         }
         else if (glfwGetKey(window, GLFW_KEY_S) && glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         {
-            olafAngle += 5.0f;
+            olafAngle += olafTurnAmount;
             olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
             olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
             moveForwardAndBack = true;
         }
         else if (glfwGetKey(window, GLFW_KEY_S) && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
-            olafAngle -= 5.0f;
+            olafAngle -= olafTurnAmount;
             olafLookAt = vec3(sin(radians(olafAngle)), 0.0f, cos(radians(olafAngle)));
             olafSideVector = cross(olafLookAt, vec3(0.0f, 1.0f, 0.0f));
             moveForwardAndBack = true;
@@ -3912,7 +3912,7 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     drawObject();
 
     // Olaf top hat base
-    glUniform3fv(colorLocation, 1, &black[0]);
+    glUniform3fv(colorLocation, 1, &darkGray[0]);
 
     mat4 olafHatWorldMatrix = olafHeadWorldMatrix;
     olafHatWorldMatrix = translate(olafHatWorldMatrix, vec3(0.0f, 0.6f, 0.0f));
@@ -3932,7 +3932,7 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     drawObject();
 
     // Olaf top hat top section
-    glUniform3fv(colorLocation, 1, &black[0]);
+    glUniform3fv(colorLocation, 1, &darkGray[0]);
 
     mat4 olafHatTopMatrix = olafHatMidMatrix;
     olafHatTopMatrix = translate(olafHatTopMatrix, vec3(0.0f, 3.05f, 0.0f));
