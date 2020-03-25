@@ -3891,7 +3891,6 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     olafNoseWorldMatrix = scale(olafNoseWorldMatrix, vec3(1.0f / 0.8f, 1.0f, 1.0f / 0.8f));             // 1. revert head scale
 
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafNoseWorldMatrix[0][0]);
-    //drawObject();
 
     // Olaf right eye
     glUniform3fv(colorLocation, 1, &black[0]);
@@ -3962,14 +3961,22 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
         olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
         olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
     }
-    else
+    else if (moveLeftRight)
     {
         olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
         olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(-armAngle)), -sin(radians(-armAngle)), 0.0f));
         olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(-armAngle), vec3(0.0f, 0.0f, 1.0f));
         olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
     }
+    else
+    {
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+        olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
 
+    }
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafRightArmWorldMatrix[0][0]);
     drawObject();
 
@@ -4005,11 +4012,19 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
         olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
         olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
     }
-    else
+    else if (moveLeftRight)
     {
         olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
         olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(armAngle)), sin(radians(armAngle)), 0.0f));
         olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(armAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+    }
+    else
+    {
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
         olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
     }
 
