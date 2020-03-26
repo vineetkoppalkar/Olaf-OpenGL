@@ -87,6 +87,17 @@ float olafRotationAmount = 5.0f;
 float olafScaleAmount = 0.05f;
 float olafTurnAmount = 2.5f;
 
+// Custom olaf animations
+bool enableCustomOlafAnimation = false;
+float olafLeftArmLateralAngle = 0.0f;
+float olafLeftArmVerticalAngle = 0.0f;
+float olafRightArmLateralAngle = 0.0f;
+float olafRightArmVerticalAngle = 0.0f;
+float olafLeftFootLateralAngle = 0.0f;
+float olafLeftFootVerticalAngle = 0.0f;
+float olafRightFootLateralAngle = 0.0f;
+float olafRightFootVerticalAngle = 0.0f;
+
 // Rendering parameters
 bool drawWithReversedFaceCulling = true;
 GLenum renderMode = GL_TRIANGLE_STRIP;
@@ -118,7 +129,6 @@ const vec3 darkGray(0.3f, 0.3f, 0.3f);
 bool showTexture = true;
 GLuint snowTextureID;
 GLuint carrotTextureID;
-GLuint brickTextureID;
 
 // VAOs
 unsigned int lineVAO;
@@ -1830,7 +1840,6 @@ int main(int argc, char* argv[])
     // Load textures
     snowTextureID = loadTexture("../Assets/Textures/snow.jpg");
     carrotTextureID = loadTexture("../Assets/Textures/carrot.jpg");
-    brickTextureID = loadTexture("../Assets/Textures/brick.jpg");
 
     // Compile and link shaders
     string vertexCode = loadShaderFile("../Assets/Shaders/shader.vs");
@@ -2133,6 +2142,16 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         olafLookAt = vec3(1.0f, 0.0f, 0.0f);
         olafUp = vec3(0.0f, 1.0f, 0.0f);
         olafSideVector = cross(olafLookAt, olafUp);
+
+        enableCustomOlafAnimation = false;
+        olafLeftArmLateralAngle = 0.0f;
+        olafLeftArmVerticalAngle = 0.0f;
+        olafRightArmLateralAngle = 0.0f;
+        olafRightArmVerticalAngle = 0.0f;
+        olafLeftFootLateralAngle = 0.0f;
+        olafLeftFootVerticalAngle = 0.0f;
+        olafRightFootLateralAngle = 0.0f;
+        olafRightFootVerticalAngle = 0.0f;
     }
 
     // Randomly reposition olaf
@@ -2196,6 +2215,20 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
     {
         showTexture = !showTexture;
+    }
+
+    // Toggle custom olaf animatons
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    {
+        enableCustomOlafAnimation = !enableCustomOlafAnimation;
+        olafLeftArmLateralAngle = 0.0f;
+        olafLeftArmVerticalAngle = 0.0f;
+        olafRightArmLateralAngle = 0.0f;
+        olafRightArmVerticalAngle = 0.0f;
+        olafLeftFootLateralAngle = 0.0f;
+        olafLeftFootVerticalAngle = 0.0f;
+        olafRightFootLateralAngle = 0.0f;
+        olafRightFootVerticalAngle = 0.0f;
     }
 }
 
@@ -2371,6 +2404,123 @@ void processUserInput(GLFWwindow* window)
     {
         cameraRotateX -= cameraRotationAmount;
     }
+
+    float olafLimbRotationAmount = 2.5f;
+    if (enableCustomOlafAnimation) {
+
+        // Rotate left arm in positive direction
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate left arm in positive vertical direction
+                olafLeftArmVerticalAngle += olafLimbRotationAmount;
+            }
+            else {
+                // Rotate left arm in positive lateral direction
+                olafLeftArmLateralAngle += olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate left arm in negative direction
+        if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate left arm in negative vertical direction
+                olafLeftArmVerticalAngle -= olafLimbRotationAmount;
+            }
+            else {
+                // Rotate left arm in negative lateral direction
+                olafLeftArmLateralAngle -= olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate right arm in positive direction
+        if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate right arm in positive vertical direction
+                olafRightArmVerticalAngle += olafLimbRotationAmount;
+            }
+            else {
+                // Rotate right arm in positive lateral direction
+                olafRightArmLateralAngle += olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate right arm in negative direction
+        if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate right arm in negative vertical direction
+                olafRightArmVerticalAngle -= olafLimbRotationAmount;
+            }
+            else {
+                // Rotate right arm in negative lateral direction
+                olafRightArmLateralAngle -= olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate left foot in positive direction
+        if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate left foot in positive vertical direction
+                olafLeftFootVerticalAngle += olafLimbRotationAmount;
+            }
+            else {
+                // Rotate left foot in positive lateral direction
+                olafLeftFootLateralAngle += olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate left foot in negative direction
+        if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate left foot in negative vertical direction
+                olafLeftFootVerticalAngle -= olafLimbRotationAmount;
+            }
+            else {
+                // Rotate left foot in negative lateral direction
+                olafLeftFootLateralAngle -= olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate right foot in positive direction
+        if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate right foot in positive vertical direction
+                olafRightFootVerticalAngle += olafLimbRotationAmount;
+            }
+            else {
+                // Rotate right foot in positive lateral direction
+                olafRightFootLateralAngle += olafLimbRotationAmount;
+            }
+        }
+
+        // Rotate right foot in negative direction
+        if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS)
+        {
+            if (isHoldingShift)
+            {
+                // Rotate right foot in negative vertical direction
+                olafRightFootVerticalAngle -= olafLimbRotationAmount;
+            }
+            else {
+                // Rotate right foot in negative lateral direction
+                olafRightFootLateralAngle -= olafLimbRotationAmount;
+            }
+        }
+    }
+
 }
 
 void drawGrid(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocation)
@@ -2534,13 +2684,20 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafRightFootWorldMatrix = olafBaseWorldMatrix;
-    if (moveForwardAndBack)
-    {
-        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(1.0f, 0.0f, 0.0f));
+    if (!enableCustomOlafAnimation) {
+        if (moveForwardAndBack)
+        {
+            olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(1.0f, 0.0f, 0.0f));
+        }
+        else if (moveLeftRight)
+        {
+            olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(0.0f, 0.0f, 1.0f));
+        }
     }
-    else if (moveLeftRight)
+    else
     {
-        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-footAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-olafRightFootLateralAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafRightFootWorldMatrix = rotate(olafRightFootWorldMatrix, radians(-olafRightFootVerticalAngle), vec3(0.0f, 0.0f, 1.0f));
     }
     olafRightFootWorldMatrix = translate(olafRightFootWorldMatrix, vec3(-0.3f, -footDistanceFromBase, 0.0f));
     olafRightFootWorldMatrix = scale(olafRightFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
@@ -2552,13 +2709,21 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafLeftFootWorldMatrix = olafBaseWorldMatrix;
-    if (moveForwardAndBack)
+    if (!enableCustomOlafAnimation)
     {
-        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(1.0f, 0.0f, 0.0f));
+        if (moveForwardAndBack)
+        {
+            olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(1.0f, 0.0f, 0.0f));
+        }
+        else if (moveLeftRight)
+        {
+            olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(0.0f, 0.0f, 1.0f));
+        }
     }
-    else if (moveLeftRight)
+    else
     {
-        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(footAngle), vec3(0.0f, 0.0f, 1.0f));
+        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(olafLeftFootLateralAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafLeftFootWorldMatrix = rotate(olafLeftFootWorldMatrix, radians(olafLeftFootVerticalAngle), vec3(0.0f, 0.0f, 1.0f));
     }
     olafLeftFootWorldMatrix = translate(olafLeftFootWorldMatrix, vec3(0.3f, -footDistanceFromBase, 0.0f));
     olafLeftFootWorldMatrix = scale(olafLeftFootWorldMatrix, vec3(0.2f, 0.2f, 0.5f));
@@ -2686,31 +2851,44 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
 
     mat4 olafRightArmWorldMatrix = olafTorsoWorldMatrix;
 
-    if (moveForwardAndBack)
+    if (!enableCustomOlafAnimation)
     {
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 1.4f, 0.0f));
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(armAngle)), -sin(radians(armAngle))));
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
-        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(armAngle), vec3(1.0f, 0.0f, 0.0f));
-        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
-        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
-        olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
-    }
-    else if (moveLeftRight)
-    {
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(-armAngle)), -sin(radians(-armAngle)), 0.0f));
-        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(-armAngle), vec3(0.0f, 0.0f, 1.0f));
-        olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        if (moveForwardAndBack)
+        {
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 1.4f, 0.0f));
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(armAngle)), -sin(radians(armAngle))));
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(armAngle), vec3(1.0f, 0.0f, 0.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+            olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
+        else if (moveLeftRight)
+        {
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(-armAngle)), -sin(radians(-armAngle)), 0.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(-armAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
+        else
+        {
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
+            olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+            olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
     }
     else
     {
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 0.2f, 0.0f));
-        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(initialArmAngle)), -sin(radians(initialArmAngle)), 0.0f));
-        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        float customRightArmAngle = initialArmAngle + olafRightArmVerticalAngle;
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, vec3(-armDistanceFromTorso, 1.4f, 0.0f));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(olafRightArmLateralAngle)), -sin(radians(olafRightArmLateralAngle))));
+        olafRightArmWorldMatrix = translate(olafRightArmWorldMatrix, armPivotLength * vec3(-cos(radians(customRightArmAngle)), -sin(radians(customRightArmAngle)), 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(olafRightArmLateralAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(customRightArmAngle), vec3(0.0f, 0.0f, 1.0f));
         olafRightArmWorldMatrix = rotate(olafRightArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
         olafRightArmWorldMatrix = scale(olafRightArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
-
     }
     glUniformMatrix4fv(worldMatrixLocation, 1, GL_FALSE, &olafRightArmWorldMatrix[0][0]);
     drawObject();
@@ -2736,29 +2914,42 @@ void drawOlaf(int shaderProgram, GLuint worldMatrixLocation, GLuint colorLocatio
     glUniform3fv(colorLocation, 1, &white[0]);
 
     mat4 olafLeftArmWorldMatrix = olafTorsoWorldMatrix;
-
-    if (moveForwardAndBack)
+    if (!enableCustomOlafAnimation)
     {
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 1.4f, 0.0f));
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(-armAngle)), -sin(radians(-armAngle))));
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
-        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-armAngle), vec3(1.0f, 0.0f, 0.0f));
-        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
-        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
-        olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
-    }
-    else if (moveLeftRight)
-    {
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(armAngle)), sin(radians(armAngle)), 0.0f));
-        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(armAngle), vec3(0.0f, 0.0f, 1.0f));
-        olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        if (moveForwardAndBack)
+        {
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 1.4f, 0.0f));
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(-armAngle)), -sin(radians(-armAngle))));
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-armAngle), vec3(1.0f, 0.0f, 0.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+            olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
+        else if (moveLeftRight)
+        {
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(armAngle)), sin(radians(armAngle)), 0.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(armAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
+        else
+        {
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
+            olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+            olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
+            olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
+        }
     }
     else
     {
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 0.2f, 0.0f));
-        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-initialArmAngle)), sin(radians(-initialArmAngle)), 0.0f));
-        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-initialArmAngle), vec3(0.0f, 0.0f, 1.0f));
+        float customLeftArmAngle = initialArmAngle + olafLeftArmVerticalAngle;
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, vec3(armDistanceFromTorso, 1.4f, 0.0f));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(0.0f, -cos(radians(-olafLeftArmLateralAngle)), -sin(radians(-olafLeftArmLateralAngle))));
+        olafLeftArmWorldMatrix = translate(olafLeftArmWorldMatrix, armPivotLength * vec3(cos(radians(-customLeftArmAngle)), sin(radians(-customLeftArmAngle)), 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-olafLeftArmLateralAngle), vec3(1.0f, 0.0f, 0.0f));
+        olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(-customLeftArmAngle), vec3(0.0f, 0.0f, 1.0f));
         olafLeftArmWorldMatrix = rotate(olafLeftArmWorldMatrix, radians(90.0f), vec3(1.0f, 0.0f, 0.0f));
         olafLeftArmWorldMatrix = scale(olafLeftArmWorldMatrix, vec3(1.5f, 0.25f, 0.3f));
     }

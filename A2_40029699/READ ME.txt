@@ -35,3 +35,35 @@ r : Resests Olaf's position, rotation and scale
 
 b : Toggle shadows
 x : Toggle textures
+
+=============== Custom limb movements =====================
+
+	1 : Toggle between custom limb movements
+
+	2 : Move left arm in positive lateral direction
+shift + 2 : Move left arm in positive vertical direction
+	3 : Move left arm in negative lateral direction
+shift + 3 : Move left arm in negative vertical direction
+
+	4 : Move right arm in positive lateral direction
+shift + 4 : Move right arm in positive vertical direction
+	5 : Move right arm in negative lateral direction
+shift + 5 : Move right arm in negative vertical direction
+
+	6 : Move left foot in negative lateral direction
+shift + 6 : Move left foot in negative vertical direction
+	7 : Move left foot in positive lateral direction
+shift + 7 : Move left foot in positive vertical direction
+
+	8 : Move right foot in positive lateral direction
+shift + 8 : Move right foot in positive vertical direction
+	9 : Move right foot in negative lateral direction
+shift + 9 : Move right foot in negative vertical direction
+
+
+
+
+
+
+
+
