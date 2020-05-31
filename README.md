@@ -1,4 +1,4 @@
-# Olaf OpenGL Part 2
+# Olaf OpenGL
 ## Objectives
 Implement lighting, shading, texture mapping, shadow generation, and hand and leg motion to move player model
 
